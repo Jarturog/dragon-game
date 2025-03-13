@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     public float jumpHeight = 2f;
     public float gravity = 9.81f;
     public Transform cameraTransform;
+    public float rotationSpeed = 10f; // Velocidad de rotación del personaje
     
     [Header("Ataques")]
     public float attackCooldown = 0.5f;
@@ -17,8 +18,8 @@ public class PlayerController : MonoBehaviour
     public float spearAttackDamage = 15f;
     
     [Header("Efectos")]
-    public ParticleSystem fireParticleSystem; // Sistema de partículas para la llamarada
-    public float fireEffectDuration = 2f; // Duración de la llamarada
+    public ParticleSystem fireParticleSystem;
+    public float fireEffectDuration = 2f;
     
     private CharacterController controller;
     private Vector3 velocity;
@@ -26,14 +27,12 @@ public class PlayerController : MonoBehaviour
     private float lastAttackTime;
     private bool isRunning = false;
     
-    void Start() 
-    {
+    void Start() {
         controller = GetComponent<CharacterController>();
         
         if (cameraTransform == null)
             cameraTransform = Camera.main.transform;
             
-        // Si no se ha asignado un sistema de partículas, intentar crearlo
         if (fireParticleSystem == null)
         {
             Debug.LogWarning("No se ha asignado un sistema de partículas para la llamarada. Crea uno en la escena y asígnalo al script.");
@@ -42,10 +41,7 @@ public class PlayerController : MonoBehaviour
     
     void Update() 
     {
-        // Movimiento básico
         HandleMovement();
-        
-        // Ataques
         HandleAttacks();
     }
     
@@ -77,19 +73,25 @@ public class PlayerController : MonoBehaviour
         
         Vector3 move = right * moveX + forward * moveZ;
         
-        // Rotar el personaje hacia la dirección del movimiento
-        if (move.magnitude > 0.1f)
-        {
-            transform.rotation = Quaternion.LookRotation(move);
-        }
-        
+        // Aplicar movimiento
         controller.Move(move * (currentSpeed * Time.deltaTime));
+        
+        // MODIFICACIÓN: Siempre rotar el personaje para dar la espalda a la cámara
+        // Obtenemos la dirección de la cámara al jugador en el plano horizontal
+        Vector3 directionFromCamera = transform.position - cameraTransform.position;
+        directionFromCamera.y = 0;
+        directionFromCamera.Normalize();
+        
+        // Calculamos la rotación para dar la espalda a la cámara
+        Quaternion targetRotation = Quaternion.LookRotation(directionFromCamera);
+        
+        // Aplicamos la rotación suavemente
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         
         // Salto
         if (Input.GetButtonDown("Jump") && isGrounded) 
         {
             velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
-            Debug.Log("Salto");
         }
         
         // Aplicar gravedad
@@ -121,7 +123,6 @@ public class PlayerController : MonoBehaviour
         lastAttackTime = Time.time;
         Debug.Log("¡Ataque con lanza!");
         
-        // Usar un Raycast para detectar enemigos delante del jugador
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, spearAttackRange))
         {
@@ -134,7 +135,6 @@ public class PlayerController : MonoBehaviour
             }
         }
         
-        // Efecto visual simple
         Debug.DrawRay(transform.position, transform.forward * spearAttackRange, Color.red, 0.5f);
     }
     
@@ -143,21 +143,14 @@ public class PlayerController : MonoBehaviour
         lastAttackTime = Time.time;
         Debug.Log("¡Llamarada de fuego!");
         
-        // Activar el sistema de partículas
         if (fireParticleSystem != null)
         {
-            // Posicionar y orientar el sistema de partículas en la dirección del personaje
             fireParticleSystem.transform.position = transform.position + transform.forward * 0.5f + Vector3.up * 1f;
             fireParticleSystem.transform.rotation = transform.rotation;
-            
-            // Iniciar la emisión de partículas
             fireParticleSystem.Play();
-            
-            // Detener las partículas después de un tiempo
             Invoke("StopFireEffect", fireEffectDuration);
         }
-        Debug.Log(transform.position);
-        // Raycast para detectar enemigos en el camino de la llamarada
+        
         RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, fireAttackRange);
         foreach (RaycastHit hit in hits)
         {
