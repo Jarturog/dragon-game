@@ -1502,7 +1502,7 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585547}
   m_Layer: 0
-  m_Name: Main Camera
+  m_Name: Top Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1567,13 +1567,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 90, z: 0}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8535,6 +8535,7 @@ MonoBehaviour:
   jumpHeight: 2
   gravity: 9.81
   cameraTransform: {fileID: 1383749593}
+  rotationSpeed: 10
   attackCooldown: 0.5
   spearAttackRange: 2
   fireAttackRange: 5
@@ -11672,7 +11673,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1756904089}
   - {fileID: 1911475743}
   - {fileID: 1432309946}
   - {fileID: 870457408}
@@ -12552,7 +12552,7 @@ Transform:
   m_GameObject: {fileID: 1383749588}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -46.6061, y: 54.641994, z: 5.1244855}
+  m_LocalPosition: {x: 0, y: 90, z: -90}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12934,7 +12934,7 @@ GameObject:
   - component: {fileID: 1462755915}
   - component: {fileID: 1462755917}
   m_Layer: 0
-  m_Name: Enemy1
+  m_Name: EnemyPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15475,11 +15475,11 @@ Transform:
   m_GameObject: {fileID: 1756904088}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -80, y: 0, z: 0}
   m_LocalScale: {x: 4, y: 1, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1249447017}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &1756904090
 MeshCollider:
@@ -16799,3 +16799,4 @@ SceneRoots:
   - {fileID: 1383749593}
   - {fileID: 1462755914}
   - {fileID: 614354142}
+  - {fileID: 1756904089}
