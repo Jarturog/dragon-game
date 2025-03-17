@@ -138,14 +138,13 @@ public class Enemy : MonoBehaviour
     private void AttackPlayer()
     {
         Debug.Log(gameObject.name + " attacks player for " + attackDamage + " damage!");
-        
-        // You can implement player damage here
-        // If player has a health script, you could do:
-        // PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-        // if (playerHealth != null) playerHealth.TakeDamage(attackDamage);
-        
-        // Visual feedback for attack
-        // You might want to add animation or particle effects here
+    
+        // Get the PlayerHealth component and apply damage
+        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+        if (playerHealth != null) 
+        {
+            playerHealth.TakeDamage(attackDamage);
+        }
     }
 
     public void TakeDamage(float damage)

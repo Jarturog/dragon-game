@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour 
@@ -25,10 +26,19 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity;
     private bool isGrounded;
     private float lastAttackTime;
-    private bool isRunning = false;
+    [HideInInspector] public bool isRunning = false;
+    
+    private PlayerHealth playerHealth;
     
     void Start() {
         controller = GetComponent<CharacterController>();
+        playerHealth = GetComponent<PlayerHealth>();
+        
+        if (playerHealth == null)
+        {
+            Debug.LogWarning("PlayerHealth component not found. Adding one automatically.");
+            playerHealth = gameObject.AddComponent<PlayerHealth>();
+        }
         
         if (cameraTransform == null)
             cameraTransform = Camera.main.transform;
@@ -55,7 +65,23 @@ public class PlayerController : MonoBehaviour
         }
         
         // Correr (mantener shift)
-        isRunning = Input.GetKey(KeyCode.LeftShift);
+        bool wantsToRun = Input.GetKey(KeyCode.LeftShift);
+        
+        // Only run if we have enough stamina
+        if (wantsToRun && playerHealth.currentStamina > Math.Min(1, playerHealth.maxStamina / 100))
+        {
+            isRunning = true;
+            // Consume stamina while running (only if actually moving)
+            if ((Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0))
+            {
+                playerHealth.UseStamina(playerHealth.runStaminaCost * Time.deltaTime);
+            }
+        }
+        else
+        {
+            isRunning = false;
+        }
+        
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
         
         // Movimiento horizontal relativo a la cámara
@@ -91,7 +117,11 @@ public class PlayerController : MonoBehaviour
         // Salto
         if (Input.GetButtonDown("Jump") && isGrounded) 
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
+            // Check if we have enough stamina to jump
+            if (playerHealth.UseStamina(playerHealth.jumpStaminaCost))
+            {
+                velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
+            }
         }
         
         // Aplicar gravedad
@@ -108,13 +138,21 @@ public class PlayerController : MonoBehaviour
         // Ataque de lanza (clic izquierdo)
         if (Input.GetMouseButtonDown(0))
         {
-            SpearAttack();
+            // Check if we have enough stamina to attack
+            if (playerHealth.UseStamina(playerHealth.attackStaminaCost))
+            {
+                SpearAttack();
+            }
         }
         
         // Ataque de fuego (clic derecho)
         if (Input.GetMouseButtonDown(1))
         {
-            FireAttack();
+            // Check if we have enough stamina to attack
+            if (playerHealth.UseStamina(playerHealth.attackStaminaCost * 2)) // Fire attack costs more
+            {
+                FireAttack();
+            }
         }
     }
     
