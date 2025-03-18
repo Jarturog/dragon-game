@@ -16,6 +16,12 @@ public class PlayerHealth : MonoBehaviour
     public float jumpStaminaCost = 10f;
     public float attackStaminaCost = 5f;
     
+    [Header("Auto Healing")]
+    public float autoHealDelay = 5f;         // Tiempo sin recibir daño antes de comenzar a curarse
+    public float autoHealRate = 2f;          // Cantidad de salud recuperada por segundo
+    private float lastDamageTime;            // Momento en que se recibió el último daño
+    private bool isAutoHealing = false;      // Indica si la curación automática está activa
+    
     private PlayerController playerController;
     private PlayerHealthUI healthUI;
     
@@ -24,6 +30,9 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         currentStamina = maxStamina;
         playerController = GetComponent<PlayerController>();
+        
+        // Inicializar el tiempo del último daño
+        lastDamageTime = -autoHealDelay;  // Para permitir curación desde el inicio si no hay daño
         
         // Create health UI
         healthUI = new PlayerHealthUI();
@@ -36,11 +45,58 @@ public class PlayerHealth : MonoBehaviour
         {
             RegenerateStamina();
         }
+        
+        // Verificar si debe comenzar la curación automática
+        CheckAutoHeal();
+    }
+    
+    private void CheckAutoHeal()
+    {
+        // Si ha pasado suficiente tiempo desde el último daño
+        if (Time.time - lastDamageTime >= autoHealDelay)
+        {
+            // Si no estamos sanando y la salud no está al máximo, activar indicador
+            if (!isAutoHealing && currentHealth < maxHealth)
+            {
+                isAutoHealing = true;
+                Debug.Log("Auto healing activated");
+            }
+        
+            // Aplicar curación si la salud no está al máximo
+            if (currentHealth < maxHealth)
+            {
+                float healAmount = autoHealRate * Time.deltaTime;
+                currentHealth = Mathf.Min(currentHealth + healAmount, maxHealth);
+                healthUI.UpdateHealthBar(currentHealth / maxHealth);
+            
+                // Si llegamos a la salud máxima, desactivar la curación automática
+                if (currentHealth >= maxHealth)
+                {
+                    isAutoHealing = false;
+                    Debug.Log("Auto healing completed - health is full");
+                }
+            }
+        }
+        else
+        {
+            // Si estábamos sanando y ahora no, desactivar indicador
+            if (isAutoHealing)
+            {
+                isAutoHealing = false;
+                Debug.Log("Auto healing deactivated");
+            }
+        }
     }
     
     public void TakeDamage(float damage)
     {
         if (currentHealth > 0) {
+            // Registrar el momento del daño para reiniciar el temporizador de curación
+            lastDamageTime = Time.time;
+            
+            // Desactivar la curación automática
+            isAutoHealing = false;
+            
             currentHealth -= damage;
             // Ensure health doesn't go below zero
             currentHealth = Mathf.Max(0, currentHealth);
