@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -7,7 +8,7 @@ public class MainMenuManager : MonoBehaviour
     public Camera mainCamera;
     public ThirdPersonCamera thirdPersonCamera;
     public PlayerController playerController;
-    public PlayerHealth playerHealth;
+    public PlayerHealth.PlayerHealthUI playerHealthUI;
     public EnemySpawner enemySpawner;
     public Canvas menuCanvas;
     public Button playButton;
@@ -32,8 +33,8 @@ public class MainMenuManager : MonoBehaviour
         if (playerController == null)
             playerController = FindFirstObjectByType<PlayerController>();
             
-        if (playerHealth == null)
-            playerHealth = FindFirstObjectByType<PlayerHealth>();
+        if (playerHealthUI == null)
+            playerHealthUI = FindFirstObjectByType<PlayerHealth>().healthUI;
         
         // Configurar estado inicial
         SetupInitialState();
@@ -42,15 +43,21 @@ public class MainMenuManager : MonoBehaviour
         playButton.onClick.AddListener(StartGame);
         quitButton.onClick.AddListener(QuitGame);
     }
-    
+
+    private void Update() {
+        if (hasBeenPaused && Input.GetKeyDown(KeyCode.Escape)) {
+            StartGame();
+        }
+    }
+
     private void SetupInitialState()
     {
         mainCamera.gameObject.SetActive(true);
         thirdPersonCamera.gameObject.SetActive(false);
         
         playerController.enabled = false;
-        playerHealth.enabled = false;
-            
+        playerHealthUI?.HideUI();
+        
         // Mostrar el cursor
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
@@ -77,7 +84,7 @@ public class MainMenuManager : MonoBehaviour
         
         // Activar el control del jugador
         playerController.enabled = true;
-        playerHealth.enabled = true;
+        playerHealthUI.ShowUI();
         
         // Ocultar el menú
         menuCanvas.gameObject.SetActive(false);
@@ -97,7 +104,7 @@ public class MainMenuManager : MonoBehaviour
         enemySpawner.PauseAllEnemies(true);
 
         playerController.enabled = false;
-        playerHealth.enabled = false;
+        playerHealthUI.HideUI();
 
         thirdPersonCamera.enabled = false;
         

@@ -23,20 +23,20 @@ public class PlayerHealth : MonoBehaviour
     [Header("Auto Healing")]
     public float autoHealDelay = 5f;         // Tiempo sin recibir daño antes de comenzar a curarse
     public float autoHealRate = 2f;          // Cantidad de salud recuperada por segundo
-    private float lastDamageTime;            // Momento en que se recibió el último daño
-    private bool isAutoHealing;      // Indica si la curación automática está activa
+    private float _lastDamageTime;            // Momento en que se recibió el último daño
+    private bool _isAutoHealing;      // Indica si la curación automática está activa
     
-    private PlayerController playerController;
-    private PlayerHealthUI healthUI;
+    private PlayerController _playerController;
+    public PlayerHealthUI healthUI;
     
     void Start()
     {
         currentHealth = maxHealth;
         currentStamina = maxStamina;
-        playerController = GetComponent<PlayerController>();
+        _playerController = GetComponent<PlayerController>();
     
         // Inicializar el tiempo del último daño
-        lastDamageTime = -autoHealDelay;  // Para permitir curación desde el inicio si no hay daño
+        _lastDamageTime = -autoHealDelay;  // Para permitir curación desde el inicio si no hay daño
     
         // Pasa las variables a la UI
         healthUI = new PlayerHealthUI(healthBarOccupiedSpace, staminaBarOccupiedSpace);
@@ -45,7 +45,7 @@ public class PlayerHealth : MonoBehaviour
     void Update()
     {
         // Regenerate stamina when not running
-        if (!playerController.isRunning)
+        if (!_playerController.isRunning)
         {
             RegenerateStamina();
         }
@@ -57,12 +57,12 @@ public class PlayerHealth : MonoBehaviour
     private void CheckAutoHeal()
     {
         // Si ha pasado suficiente tiempo desde el último daño
-        if (Time.time - lastDamageTime >= autoHealDelay)
+        if (Time.time - _lastDamageTime >= autoHealDelay)
         {
             // Si no estamos sanando y la salud no está al máximo, activar indicador
-            if (!isAutoHealing && currentHealth < maxHealth)
+            if (!_isAutoHealing && currentHealth < maxHealth)
             {
-                isAutoHealing = true;
+                _isAutoHealing = true;
                 Debug.Log("Auto healing activated");
             }
         
@@ -76,7 +76,7 @@ public class PlayerHealth : MonoBehaviour
                 // Si llegamos a la salud máxima, desactivar la curación automática
                 if (currentHealth >= maxHealth)
                 {
-                    isAutoHealing = false;
+                    _isAutoHealing = false;
                     Debug.Log("Auto healing completed - health is full");
                 }
             }
@@ -84,9 +84,9 @@ public class PlayerHealth : MonoBehaviour
         else
         {
             // Si estábamos sanando y ahora no, desactivar indicador
-            if (isAutoHealing)
+            if (_isAutoHealing)
             {
-                isAutoHealing = false;
+                _isAutoHealing = false;
                 Debug.Log("Auto healing deactivated");
             }
         }
@@ -96,10 +96,10 @@ public class PlayerHealth : MonoBehaviour
     {
         if (currentHealth > 0) {
             // Registrar el momento del daño para reiniciar el temporizador de curación
-            lastDamageTime = Time.time;
+            _lastDamageTime = Time.time;
             
             // Desactivar la curación automática
-            isAutoHealing = false;
+            _isAutoHealing = false;
             
             currentHealth -= damage;
             // Ensure health doesn't go below zero
@@ -503,6 +503,15 @@ public class PlayerHealth : MonoBehaviour
     
             if (staminaBarContainer != null)
                 staminaBarContainer.SetActive(false);
+        }
+        
+        public void ShowUI()
+        {
+            if (healthBarContainer != null)
+                healthBarContainer.SetActive(true);
+    
+            if (staminaBarContainer != null)
+                staminaBarContainer.SetActive(true);
         }
     }
 }
