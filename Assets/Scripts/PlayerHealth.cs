@@ -105,7 +105,6 @@ public class PlayerHealth : MonoBehaviour
         private GameObject staminaBarFill;
         
         private Canvas uiCanvas;
-        private RectTransform canvasRect;
         
         public PlayerHealthUI()
         {
@@ -116,25 +115,23 @@ public class PlayerHealth : MonoBehaviour
             canvasObject.AddComponent<CanvasScaler>();
             canvasObject.AddComponent<GraphicRaycaster>();
             
-            canvasRect = uiCanvas.GetComponent<RectTransform>();
-            
             // Create health bar container in top right corner
-            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(Screen.width * 0.95f, Screen.height * 0.95f), new Vector2(200, 20));
+            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(-20, -20), new Vector2(200, 20));
             
             // Create health bar background (black)
-            healthBarBackground = CreateUIElement("HealthBarBackground", healthBarContainer.transform, Color.black, new Vector2(200, 20));
+            healthBarBackground = CreateUIElement("HealthBarBackground", healthBarContainer.transform, Color.black, new Vector2(0, 0));
             
             // Create health bar fill (green)
-            healthBarFill = CreateUIElement("HealthBarFill", healthBarBackground.transform, Color.green, new Vector2(200, 20));
+            healthBarFill = CreateUIElement("HealthBarFill", healthBarBackground.transform, Color.green, new Vector2(0, 0));
             
             // Create stamina bar container below health bar
-            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(Screen.width * 0.95f, Screen.height * 0.92f), new Vector2(200, 20));
+            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(-20, -45), new Vector2(200, 20));
             
             // Create stamina bar background (black)
-            staminaBarBackground = CreateUIElement("StaminaBarBackground", staminaBarContainer.transform, Color.black, new Vector2(200, 20));
+            staminaBarBackground = CreateUIElement("StaminaBarBackground", staminaBarContainer.transform, Color.black, new Vector2(0, 0));
             
             // Create stamina bar fill (blue)
-            staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, new Vector2(200, 20));
+            staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, new Vector2(0, 0));
         }
         
         private GameObject CreateUIContainer(string name, Vector2 position, Vector2 size)
@@ -146,13 +143,13 @@ public class PlayerHealth : MonoBehaviour
             rect.anchorMin = new Vector2(1, 1);
             rect.anchorMax = new Vector2(1, 1);
             rect.pivot = new Vector2(1, 1);
-            rect.anchoredPosition = new Vector2(-Screen.width + position.x, -Screen.height + position.y);
+            rect.anchoredPosition = position;
             rect.sizeDelta = size;
             
             return container;
         }
         
-        private GameObject CreateUIElement(string name, Transform parent, Color color, Vector2 size)
+        private GameObject CreateUIElement(string name, Transform parent, Color color, Vector2 position)
         {
             GameObject element = new GameObject(name);
             element.transform.SetParent(parent, false);
@@ -161,7 +158,7 @@ public class PlayerHealth : MonoBehaviour
             rect.anchorMin = new Vector2(0, 0);
             rect.anchorMax = new Vector2(1, 1);
             rect.pivot = new Vector2(0, 0.5f);
-            rect.anchoredPosition = Vector2.zero;
+            rect.anchoredPosition = position;
             rect.sizeDelta = Vector2.zero;
             
             Image image = element.AddComponent<Image>();
@@ -177,9 +174,11 @@ public class PlayerHealth : MonoBehaviour
                 // Clamp health percent between 0 and 1
                 healthPercent = Mathf.Clamp01(healthPercent);
                 
-                // Update health bar fill
+                // Get the RectTransform
                 RectTransform rect = healthBarFill.GetComponent<RectTransform>();
-                rect.anchorMax = new Vector2(healthPercent, 1);
+                
+                // Change width to represent current health (reducing from left to right)
+                rect.offsetMin = new Vector2((1 - healthPercent) * rect.parent.GetComponent<RectTransform>().rect.width, rect.offsetMin.y);
                 
                 // Update color based on health percentage
                 Image image = healthBarFill.GetComponent<Image>();
@@ -194,9 +193,11 @@ public class PlayerHealth : MonoBehaviour
                 // Clamp stamina percent between 0 and 1
                 staminaPercent = Mathf.Clamp01(staminaPercent);
                 
-                // Update stamina bar fill
+                // Get the RectTransform
                 RectTransform rect = staminaBarFill.GetComponent<RectTransform>();
-                rect.anchorMax = new Vector2(staminaPercent, 1);
+                
+                // Change width to represent current stamina (reducing from left to right)
+                rect.offsetMin = new Vector2((1 - staminaPercent) * rect.parent.GetComponent<RectTransform>().rect.width, rect.offsetMin.y);
                 
                 // Update color based on stamina percentage
                 Image image = staminaBarFill.GetComponent<Image>();
