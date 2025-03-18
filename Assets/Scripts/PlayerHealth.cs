@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -114,6 +114,10 @@ public class PlayerHealth : MonoBehaviour
         private Canvas uiCanvas;
         private float pulseTime = 0f;
         
+        // Variables para controlar el estado de los efectos
+        private bool isHealthCritical = false;
+        private bool isStaminaCritical = false;
+        
         public PlayerHealthUI()
         {
             // Create Canvas for UI elements
@@ -185,7 +189,7 @@ public class PlayerHealth : MonoBehaviour
             staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, Vector2.zero);
             AddTextureEffect(staminaBarFill);
             
-            // Create pulse effect overlay
+            // Create pulse effect overlay - inicialmente transparente
             staminaBarPulse = CreateUIElement("StaminaBarPulse", staminaBarFill.transform, new Color(1f, 1f, 1f, 0f), Vector2.zero);
             
             // Create highlight at the top of the stamina bar
@@ -332,12 +336,28 @@ public class PlayerHealth : MonoBehaviour
                 
                 // Update color based on health percentage
                 Image image = healthBarFill.GetComponent<Image>();
-                image.color = Color.Lerp(Color.red, Color.green, healthPercent);
                 
-                // Make the bar pulse when health is low
-                if (healthPercent < 0.25f)
+                // Verifica si la salud está en estado crítico
+                bool shouldBeCritical = healthPercent < 0.25f;
+                
+                // Solo actualizamos el estado si hay un cambio
+                if (shouldBeCritical != isHealthCritical)
                 {
-                    PulseEffect(healthBarFill, 0.8f, 1f, Color.red);
+                    isHealthCritical = shouldBeCritical;
+                    
+                    // Si la salud ya no es crítica, restablecemos el color normal con la opacidad completa
+                    if (!isHealthCritical)
+                    {
+                        image.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                    }
+                }
+                else
+                {
+                    // Actualización regular del color basado en el porcentaje de salud
+                    if (!isHealthCritical)
+                    {
+                        image.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                    }
                 }
             }
         }
@@ -359,44 +379,44 @@ public class PlayerHealth : MonoBehaviour
                 Image image = staminaBarFill.GetComponent<Image>();
                 image.color = Color.Lerp(new Color(0.5f, 0.5f, 0.8f), new Color(0.2f, 0.4f, 1f), staminaPercent);
                 
-                // Make the bar flash when stamina is critically low
-                if (staminaPercent < 0.15f)
+                // Verifica si la estamina está en estado crítico
+                bool shouldBeCritical = staminaPercent < 0.15f;
+                
+                // Solo actualizamos el estado si hay un cambio
+                if (shouldBeCritical != isStaminaCritical)
                 {
-                    PulseEffect(staminaBarPulse, 0f, 0.3f, new Color(1f, 1f, 1f, 0.7f));
+                    isStaminaCritical = shouldBeCritical;
+                    
+                    // Si ya no es crítico, hacemos el pulso completamente transparente
+                    if (!isStaminaCritical)
+                    {
+                        Image pulseImage = staminaBarPulse.GetComponent<Image>();
+                        pulseImage.color = new Color(1f, 1f, 1f, 0f);
+                    }
                 }
-            }
-        }
-        
-        private void PulseEffect(GameObject target, float minAlpha, float maxAlpha, Color pulseColor)
-        {
-            Image image = target.GetComponent<Image>();
-            if (image != null)
-            {
-                pulseTime += Time.deltaTime * 5f;
-                float alpha = Mathf.Lerp(minAlpha, maxAlpha, (Mathf.Sin(pulseTime) + 1f) * 0.5f);
-                image.color = new Color(pulseColor.r, pulseColor.g, pulseColor.b, alpha);
             }
         }
         
         public void UpdatePulseEffects()
         {
-            // This will be called by the UIAnimationHandler
+            // Actualizar el tiempo de pulso
             pulseTime += Time.deltaTime * 5f;
             
-            // Update health bar pulse when health is low
-            if (healthBarFill != null && healthBarFill.GetComponent<Image>().color.g < 0.5f)
+            // Solo actualizar el pulso de salud si está en estado crítico
+            if (isHealthCritical && healthBarFill != null)
             {
-                Image image = healthBarFill.GetComponent<Image>();
+                Image healthImage = healthBarFill.GetComponent<Image>();
                 float alpha = Mathf.Lerp(0.8f, 1f, (Mathf.Sin(pulseTime) + 1f) * 0.5f);
-                image.color = new Color(image.color.r, image.color.g, image.color.b, alpha);
+                Color baseColor = Color.Lerp(Color.red, new Color(1f, 0.3f, 0.3f), (Mathf.Sin(pulseTime) + 1f) * 0.5f);
+                healthImage.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
             }
             
-            // Update stamina bar pulse
-            if (staminaBarPulse != null && staminaBarPulse.GetComponent<Image>().color.a > 0)
+            // Solo actualizar el pulso de estamina si está en estado crítico
+            if (isStaminaCritical && staminaBarPulse != null)
             {
-                Image image = staminaBarPulse.GetComponent<Image>();
+                Image pulseImage = staminaBarPulse.GetComponent<Image>();
                 float alpha = Mathf.Lerp(0f, 0.3f, (Mathf.Sin(pulseTime * 1.5f) + 1f) * 0.5f);
-                image.color = new Color(1f, 1f, 1f, alpha);
+                pulseImage.color = new Color(1f, 1f, 1f, alpha);
             }
         }
         
