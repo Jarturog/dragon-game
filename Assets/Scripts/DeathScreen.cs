@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class DeathScreen : MonoBehaviour
@@ -115,7 +114,10 @@ public class DeathScreen : MonoBehaviour
         // Wait before restarting
         yield return new WaitForSeconds(restartDelayTime);
         
-        // Restart scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // Volver al menú principal en lugar de reiniciar la escena
+        MainMenuManager.ReturnToMainMenu();
+        
+        // Destruir la pantalla de muerte
+        Destroy(gameObject);
     }
 }

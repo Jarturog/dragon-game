@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 public class ThirdPersonCamera: MonoBehaviour {
    public Transform player; // El transform del jugador a seguir
@@ -5,14 +6,21 @@ public class ThirdPersonCamera: MonoBehaviour {
    public float height = 2.0f; // Altura de la cámara
    public float smoothSpeed = 5.0f; // Velocidad de suavizado del movimiento
    public float mouseSensitivity = 3.0f; // Sensibilidad del ratón
-   private float rotationX = 0.0f; // Rotación horizontal
-   private float rotationY = 0.0f; // Rotación vertical
+   private float rotationX; // Rotación horizontal
+   private float rotationY; // Rotación vertical
    public float minVerticalAngle = -30.0f; // Límite mínimo de rotación vertical
    public float maxVerticalAngle = 60.0f; // Límite máximo de rotación vertical
    public LayerMask collisionLayers; // Capas para detectar colisiones
    public float collisionOffset = 0.5f; // Offset para evitar clipping
-   
+
+   private void Awake() {
+       GameObject secondCameraObject = GameObject.FindGameObjectWithTag("SecondCamera");
+       transform.position = secondCameraObject.transform.position;
+       transform.rotation = secondCameraObject.transform.rotation;
+   }
+
    void Start() {
+       
        // Ocultar y bloquear el cursor
        Cursor.lockState = CursorLockMode.Locked;
        Cursor.visible = false;

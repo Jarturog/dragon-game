@@ -29,8 +29,11 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public bool isRunning = false;
     
     private PlayerHealth playerHealth;
+    private MainMenuManager menuManager;
     
     void Start() {
+        menuManager = FindFirstObjectByType<MainMenuManager>();
+        
         controller = GetComponent<CharacterController>();
         playerHealth = GetComponent<PlayerHealth>();
         
@@ -53,6 +56,11 @@ public class PlayerController : MonoBehaviour
     {
         HandleMovement();
         HandleAttacks();
+        
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            menuManager.ShowPauseMenu();
+        }
     }
     
     void HandleMovement()
