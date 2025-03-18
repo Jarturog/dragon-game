@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -24,7 +25,7 @@ public class PlayerHealth : MonoBehaviour
         playerController = GetComponent<PlayerController>();
         
         // Create health UI
-        healthUI = new PlayerHealthUI(transform);
+        healthUI = new PlayerHealthUI();
     }
     
     void Update()
@@ -34,8 +35,6 @@ public class PlayerHealth : MonoBehaviour
         {
             RegenerateStamina();
         }
-        
-        healthUI.UpdateUIPosition();
     }
     
     public void TakeDamage(float damage)
@@ -52,7 +51,6 @@ public class PlayerHealth : MonoBehaviour
             if (currentHealth <= 0)
             {
                 Die();
-        
             }
         }
         else {
@@ -95,85 +93,124 @@ public class PlayerHealth : MonoBehaviour
         enabled = false;
     }
     
-    // Similar to the Enemy's HealthBar class, but with an additional stamina bar
+    // UI class for health and stamina bars
     class PlayerHealthUI
     {
-        private GameObject healthBarPlane;
-        private Material healthBarMaterial;
+        private GameObject healthBarContainer;
+        private GameObject healthBarBackground;
+        private GameObject healthBarFill;
         
-        private GameObject staminaBarPlane;
-        private Material staminaBarMaterial;
+        private GameObject staminaBarContainer;
+        private GameObject staminaBarBackground;
+        private GameObject staminaBarFill;
         
-        private Transform playerTransform;
+        private Canvas uiCanvas;
+        private RectTransform canvasRect;
         
-        public PlayerHealthUI(Transform transform)
+        public PlayerHealthUI()
         {
-            playerTransform = transform;
+            // Create Canvas for UI elements
+            GameObject canvasObject = new GameObject("PlayerHealthCanvas");
+            uiCanvas = canvasObject.AddComponent<Canvas>();
+            uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObject.AddComponent<CanvasScaler>();
+            canvasObject.AddComponent<GraphicRaycaster>();
             
-            // Create health bar
-            healthBarPlane = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Destroy(healthBarPlane.GetComponent<Collider>());
-            healthBarPlane.transform.localScale = new Vector3(1f, 0.1f, 1f);
-            healthBarPlane.transform.position = playerTransform.position + new Vector3(0, 2.2f, 0);
+            canvasRect = uiCanvas.GetComponent<RectTransform>();
             
-            healthBarMaterial = new Material(Shader.Find("Unlit/Color"));
-            healthBarMaterial.color = Color.green;
-            healthBarPlane.GetComponent<Renderer>().material = healthBarMaterial;
+            // Create health bar container in top right corner
+            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(Screen.width * 0.95f, Screen.height * 0.95f), new Vector2(200, 20));
             
-            // Create stamina bar
-            staminaBarPlane = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Destroy(staminaBarPlane.GetComponent<Collider>());
-            staminaBarPlane.transform.localScale = new Vector3(1f, 0.1f, 1f);
-            staminaBarPlane.transform.position = playerTransform.position + new Vector3(0, 2.0f, 0);
+            // Create health bar background (black)
+            healthBarBackground = CreateUIElement("HealthBarBackground", healthBarContainer.transform, Color.black, new Vector2(200, 20));
             
-            staminaBarMaterial = new Material(Shader.Find("Unlit/Color"));
-            staminaBarMaterial.color = Color.blue;
-            staminaBarPlane.GetComponent<Renderer>().material = staminaBarMaterial;
+            // Create health bar fill (green)
+            healthBarFill = CreateUIElement("HealthBarFill", healthBarBackground.transform, Color.green, new Vector2(200, 20));
+            
+            // Create stamina bar container below health bar
+            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(Screen.width * 0.95f, Screen.height * 0.92f), new Vector2(200, 20));
+            
+            // Create stamina bar background (black)
+            staminaBarBackground = CreateUIElement("StaminaBarBackground", staminaBarContainer.transform, Color.black, new Vector2(200, 20));
+            
+            // Create stamina bar fill (blue)
+            staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, new Vector2(200, 20));
+        }
+        
+        private GameObject CreateUIContainer(string name, Vector2 position, Vector2 size)
+        {
+            GameObject container = new GameObject(name);
+            container.transform.SetParent(uiCanvas.transform, false);
+            
+            RectTransform rect = container.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1, 1);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(1, 1);
+            rect.anchoredPosition = new Vector2(-Screen.width + position.x, -Screen.height + position.y);
+            rect.sizeDelta = size;
+            
+            return container;
+        }
+        
+        private GameObject CreateUIElement(string name, Transform parent, Color color, Vector2 size)
+        {
+            GameObject element = new GameObject(name);
+            element.transform.SetParent(parent, false);
+            
+            RectTransform rect = element.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 0);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(0, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+            
+            Image image = element.AddComponent<Image>();
+            image.color = color;
+            
+            return element;
         }
         
         public void UpdateHealthBar(float healthPercent)
         {
-            if (healthBarMaterial != null)
+            if (healthBarFill != null)
             {
                 // Clamp health percent between 0 and 1
                 healthPercent = Mathf.Clamp01(healthPercent);
-                healthBarMaterial.color = Color.Lerp(Color.red, Color.green, healthPercent);
-                healthBarPlane.transform.localScale = new Vector3(healthPercent, 0.1f, 1f);
+                
+                // Update health bar fill
+                RectTransform rect = healthBarFill.GetComponent<RectTransform>();
+                rect.anchorMax = new Vector2(healthPercent, 1);
+                
+                // Update color based on health percentage
+                Image image = healthBarFill.GetComponent<Image>();
+                image.color = Color.Lerp(Color.red, Color.green, healthPercent);
             }
         }
 
         public void UpdateStaminaBar(float staminaPercent)
         {
-            if (staminaBarMaterial != null)
+            if (staminaBarFill != null)
             {
                 // Clamp stamina percent between 0 and 1
                 staminaPercent = Mathf.Clamp01(staminaPercent);
-                staminaBarMaterial.color = Color.Lerp(Color.gray, Color.blue, staminaPercent);
-                staminaBarPlane.transform.localScale = new Vector3(staminaPercent, 0.1f, 1f);
-            }
-        }
-        
-        public void UpdateUIPosition()
-        {
-            if (healthBarPlane != null && staminaBarPlane != null && Camera.main != null)
-            {
-                // Update position to follow the player
-                healthBarPlane.transform.position = playerTransform.position + new Vector3(0, 2.2f, 0);
-                staminaBarPlane.transform.position = playerTransform.position + new Vector3(0, 2.0f, 0);
                 
-                // Make the bars always face the camera
-                healthBarPlane.transform.rotation = Camera.main.transform.rotation;
-                staminaBarPlane.transform.rotation = Camera.main.transform.rotation;
+                // Update stamina bar fill
+                RectTransform rect = staminaBarFill.GetComponent<RectTransform>();
+                rect.anchorMax = new Vector2(staminaPercent, 1);
+                
+                // Update color based on stamina percentage
+                Image image = staminaBarFill.GetComponent<Image>();
+                image.color = Color.Lerp(Color.gray, Color.blue, staminaPercent);
             }
         }
         
         public void HideUI()
         {
-            if (healthBarPlane != null)
-                healthBarPlane.SetActive(false);
+            if (healthBarContainer != null)
+                healthBarContainer.SetActive(false);
     
-            if (staminaBarPlane != null)
-                staminaBarPlane.SetActive(false);
+            if (staminaBarContainer != null)
+                staminaBarContainer.SetActive(false);
         }
     }
 }
