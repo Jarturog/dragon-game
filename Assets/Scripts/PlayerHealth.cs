@@ -5,10 +5,14 @@ using System.Collections.Generic;
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Health Settings")]
+    [Range(0f, 1f)]
+    public float healthBarOccupiedSpace = 0.4f;
     public float maxHealth = 100f;
     public float currentHealth;
     
     [Header("Stamina Settings")]
+    [Range(0f, 1f)]
+    public float staminaBarOccupiedSpace = 0.2f;
     public float maxStamina = 100f;
     public float currentStamina;
     public float staminaRegenRate = 10f;
@@ -20,7 +24,7 @@ public class PlayerHealth : MonoBehaviour
     public float autoHealDelay = 5f;         // Tiempo sin recibir daño antes de comenzar a curarse
     public float autoHealRate = 2f;          // Cantidad de salud recuperada por segundo
     private float lastDamageTime;            // Momento en que se recibió el último daño
-    private bool isAutoHealing = false;      // Indica si la curación automática está activa
+    private bool isAutoHealing;      // Indica si la curación automática está activa
     
     private PlayerController playerController;
     private PlayerHealthUI healthUI;
@@ -30,12 +34,12 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         currentStamina = maxStamina;
         playerController = GetComponent<PlayerController>();
-        
+    
         // Inicializar el tiempo del último daño
         lastDamageTime = -autoHealDelay;  // Para permitir curación desde el inicio si no hay daño
-        
-        // Create health UI
-        healthUI = new PlayerHealthUI();
+    
+        // Pasa las variables a la UI
+        healthUI = new PlayerHealthUI(healthBarOccupiedSpace, staminaBarOccupiedSpace);
     }
     
     void Update()
@@ -174,8 +178,14 @@ public class PlayerHealth : MonoBehaviour
         private bool isHealthCritical = false;
         private bool isStaminaCritical = false;
         
-        public PlayerHealthUI()
+        private float healthBarWidth;
+        private float staminaBarWidth;
+    
+        public PlayerHealthUI(float healthBarWidth, float staminaBarWidth)
         {
+            this.healthBarWidth = healthBarWidth;
+            this.staminaBarWidth = staminaBarWidth;
+            
             // Create Canvas for UI elements
             GameObject canvasObject = new GameObject("PlayerHealthCanvas");
             uiCanvas = canvasObject.AddComponent<Canvas>();
@@ -198,8 +208,13 @@ public class PlayerHealth : MonoBehaviour
             containerRect.offsetMax = Vector2.zero;
             
             // Create health bar container in top right corner
-            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(-20, -20), new Vector2(200, 25));
+            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(-20, -100), new Vector2(180, 20));
             healthBarContainer.transform.SetParent(uiContainer.transform, false);
+            RectTransform healthRect = healthBarContainer.GetComponent<RectTransform>();
+            healthRect.anchorMin = new Vector2(1 - this.healthBarWidth, 1);
+            healthRect.anchorMax = new Vector2(1, 1);
+            healthRect.offsetMin = new Vector2(0, -35);
+            healthRect.offsetMax = new Vector2(-20, -10);
             
             // Create drop shadow effect
             GameObject healthDropShadow = CreateUIElement("HealthDropShadow", healthBarContainer.transform, new Color(0, 0, 0, 0.5f), new Vector2(3, -3));
@@ -229,8 +244,13 @@ public class PlayerHealth : MonoBehaviour
             healthBarBorder = CreateBorder("HealthBarBorder", healthBarBackground.transform, 2f, new Color(0.3f, 0.3f, 0.3f));
             
             // Create stamina bar container below health bar
-            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(-20, -50), new Vector2(200, 20));
+            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(-20, -125), new Vector2(180, 15));
             staminaBarContainer.transform.SetParent(uiContainer.transform, false);
+            RectTransform staminaRect = staminaBarContainer.GetComponent<RectTransform>();
+            staminaRect.anchorMin = new Vector2(1 - this.staminaBarWidth, 1);
+            staminaRect.anchorMax = new Vector2(1, 1);
+            staminaRect.offsetMin = new Vector2(0, -65);
+            staminaRect.offsetMax = new Vector2(-20, -45);
             
             // Create drop shadow effect for stamina bar
             GameObject staminaDropShadow = CreateUIElement("StaminaDropShadow", staminaBarContainer.transform, new Color(0, 0, 0, 0.5f), new Vector2(3, -3));
