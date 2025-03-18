@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -94,17 +95,24 @@ public class PlayerHealth : MonoBehaviour
     }
     
     // UI class for health and stamina bars
-    class PlayerHealthUI
+    public class PlayerHealthUI
     {
         private GameObject healthBarContainer;
         private GameObject healthBarBackground;
         private GameObject healthBarFill;
+        private GameObject healthBarBorder;
+        private GameObject healthBarHighlight;
+        private GameObject healthBarSegments;
         
         private GameObject staminaBarContainer;
         private GameObject staminaBarBackground;
         private GameObject staminaBarFill;
+        private GameObject staminaBarBorder;
+        private GameObject staminaBarHighlight;
+        private GameObject staminaBarPulse;
         
         private Canvas uiCanvas;
+        private float pulseTime = 0f;
         
         public PlayerHealthUI()
         {
@@ -112,32 +120,95 @@ public class PlayerHealth : MonoBehaviour
             GameObject canvasObject = new GameObject("PlayerHealthCanvas");
             uiCanvas = canvasObject.AddComponent<Canvas>();
             uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObject.AddComponent<CanvasScaler>();
+            
+            // Add canvas scaler for proper resolution handling
+            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            
             canvasObject.AddComponent<GraphicRaycaster>();
             
+            // Create root container for all UI
+            GameObject uiContainer = new GameObject("UIContainer");
+            uiContainer.transform.SetParent(uiCanvas.transform, false);
+            RectTransform containerRect = uiContainer.AddComponent<RectTransform>();
+            containerRect.anchorMin = Vector2.zero;
+            containerRect.anchorMax = Vector2.one;
+            containerRect.offsetMin = Vector2.zero;
+            containerRect.offsetMax = Vector2.zero;
+            
             // Create health bar container in top right corner
-            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(-20, -20), new Vector2(200, 20));
+            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(-20, -20), new Vector2(200, 25));
+            healthBarContainer.transform.SetParent(uiContainer.transform, false);
             
-            // Create health bar background (black)
-            healthBarBackground = CreateUIElement("HealthBarBackground", healthBarContainer.transform, Color.black, new Vector2(0, 0));
+            // Create drop shadow effect
+            GameObject healthDropShadow = CreateUIElement("HealthDropShadow", healthBarContainer.transform, new Color(0, 0, 0, 0.5f), new Vector2(3, -3));
+            RectTransform shadowRect = healthDropShadow.GetComponent<RectTransform>();
+            shadowRect.sizeDelta = new Vector2(6, 6);
             
-            // Create health bar fill (green)
-            healthBarFill = CreateUIElement("HealthBarFill", healthBarBackground.transform, Color.green, new Vector2(0, 0));
+            // Create health bar background with gradient
+            healthBarBackground = CreateUIElement("HealthBarBackground", healthBarContainer.transform, Color.black, Vector2.zero);
+            AddGradientEffect(healthBarBackground, new Color(0.1f, 0.1f, 0.1f), new Color(0.2f, 0.2f, 0.2f));
+            
+            // Create health bar fill with texture effect
+            healthBarFill = CreateUIElement("HealthBarFill", healthBarBackground.transform, Color.green, Vector2.zero);
+            AddTextureEffect(healthBarFill);
+            
+            // Create health bar segments
+            healthBarSegments = CreateSegments("HealthBarSegments", healthBarFill.transform, 10, new Color(0, 0, 0, 0.15f));
+            
+            // Create highlight at the top of the health bar
+            healthBarHighlight = CreateUIElement("HealthBarHighlight", healthBarFill.transform, new Color(1, 1, 1, 0.3f), new Vector2(0, 0));
+            RectTransform highlightRect = healthBarHighlight.GetComponent<RectTransform>();
+            highlightRect.anchorMin = new Vector2(0, 0.8f);
+            highlightRect.anchorMax = new Vector2(1, 1);
+            highlightRect.offsetMin = Vector2.zero;
+            highlightRect.offsetMax = Vector2.zero;
+            
+            // Create border for health bar
+            healthBarBorder = CreateBorder("HealthBarBorder", healthBarBackground.transform, 2f, new Color(0.3f, 0.3f, 0.3f));
             
             // Create stamina bar container below health bar
-            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(-20, -45), new Vector2(200, 20));
+            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(-20, -50), new Vector2(200, 20));
+            staminaBarContainer.transform.SetParent(uiContainer.transform, false);
             
-            // Create stamina bar background (black)
-            staminaBarBackground = CreateUIElement("StaminaBarBackground", staminaBarContainer.transform, Color.black, new Vector2(0, 0));
+            // Create drop shadow effect for stamina bar
+            GameObject staminaDropShadow = CreateUIElement("StaminaDropShadow", staminaBarContainer.transform, new Color(0, 0, 0, 0.5f), new Vector2(3, -3));
+            RectTransform staminaShadowRect = staminaDropShadow.GetComponent<RectTransform>();
+            staminaShadowRect.sizeDelta = new Vector2(6, 6);
             
-            // Create stamina bar fill (blue)
-            staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, new Vector2(0, 0));
+            // Create stamina bar background with gradient
+            staminaBarBackground = CreateUIElement("StaminaBarBackground", staminaBarContainer.transform, Color.black, Vector2.zero);
+            AddGradientEffect(staminaBarBackground, new Color(0.1f, 0.1f, 0.15f), new Color(0.15f, 0.15f, 0.2f));
+            
+            // Create stamina bar fill with texture effect
+            staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, Vector2.zero);
+            AddTextureEffect(staminaBarFill);
+            
+            // Create pulse effect overlay
+            staminaBarPulse = CreateUIElement("StaminaBarPulse", staminaBarFill.transform, new Color(1f, 1f, 1f, 0f), Vector2.zero);
+            
+            // Create highlight at the top of the stamina bar
+            staminaBarHighlight = CreateUIElement("StaminaBarHighlight", staminaBarFill.transform, new Color(1, 1, 1, 0.3f), new Vector2(0, 0));
+            RectTransform staminaHighlightRect = staminaBarHighlight.GetComponent<RectTransform>();
+            staminaHighlightRect.anchorMin = new Vector2(0, 0.8f);
+            staminaHighlightRect.anchorMax = new Vector2(1, 1);
+            staminaHighlightRect.offsetMin = Vector2.zero;
+            staminaHighlightRect.offsetMax = Vector2.zero;
+            
+            // Create border for stamina bar
+            staminaBarBorder = CreateBorder("StaminaBarBorder", staminaBarBackground.transform, 1.5f, new Color(0.3f, 0.3f, 0.5f));
+            
+            // Start the animation coroutine for pulse effects
+            GameObject coroutineHandler = new GameObject("UIAnimationHandler");
+            coroutineHandler.transform.SetParent(canvasObject.transform);
+            UIAnimationHandler animHandler = coroutineHandler.AddComponent<UIAnimationHandler>();
+            animHandler.Initialize(this);
         }
         
         private GameObject CreateUIContainer(string name, Vector2 position, Vector2 size)
         {
             GameObject container = new GameObject(name);
-            container.transform.SetParent(uiCanvas.transform, false);
             
             RectTransform rect = container.AddComponent<RectTransform>();
             rect.anchorMin = new Vector2(1, 1);
@@ -167,6 +238,85 @@ public class PlayerHealth : MonoBehaviour
             return element;
         }
         
+        private GameObject CreateBorder(string name, Transform parent, float thickness, Color color)
+        {
+            GameObject border = new GameObject(name);
+            border.transform.SetParent(parent, false);
+            
+            RectTransform rect = border.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 0);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.offsetMin = new Vector2(-thickness, -thickness);
+            rect.offsetMax = new Vector2(thickness, thickness);
+            
+            // Use the outline image effect for the border
+            Outline outline = border.AddComponent<Outline>();
+            outline.effectColor = color;
+            outline.effectDistance = new Vector2(thickness, thickness);
+            
+            return border;
+        }
+        
+        private GameObject CreateSegments(string name, Transform parent, int segmentCount, Color color)
+        {
+            GameObject segmentsContainer = new GameObject(name);
+            segmentsContainer.transform.SetParent(parent, false);
+            
+            RectTransform containerRect = segmentsContainer.AddComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0, 0);
+            containerRect.anchorMax = new Vector2(1, 1);
+            containerRect.offsetMin = Vector2.zero;
+            containerRect.offsetMax = Vector2.zero;
+            
+            float segmentWidth = 1f / segmentCount;
+            
+            for (int i = 1; i < segmentCount; i++)
+            {
+                GameObject segment = new GameObject("Segment" + i);
+                segment.transform.SetParent(segmentsContainer.transform, false);
+                
+                RectTransform rect = segment.AddComponent<RectTransform>();
+                rect.anchorMin = new Vector2(segmentWidth * i, 0);
+                rect.anchorMax = new Vector2(segmentWidth * i + 0.005f, 1);
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+                
+                Image image = segment.AddComponent<Image>();
+                image.color = color;
+            }
+            
+            return segmentsContainer;
+        }
+        
+        private void AddGradientEffect(GameObject target, Color topColor, Color bottomColor)
+        {
+            Image image = target.GetComponent<Image>();
+            if (image != null)
+            {
+                // Create a vertical gradient
+                Gradient gradient = new Gradient();
+                gradient.SetKeys(
+                    new GradientColorKey[] { new GradientColorKey(bottomColor, 0.0f), new GradientColorKey(topColor, 1.0f) },
+                    new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
+                );
+                
+                // Add a custom material with shader to apply the gradient
+                // Since we can't directly use shaders, we'll use a workaround with UI Vertex helper
+                VerticalGradient vertGradient = target.AddComponent<VerticalGradient>();
+                vertGradient.topColor = topColor;
+                vertGradient.bottomColor = bottomColor;
+            }
+        }
+        
+        private void AddTextureEffect(GameObject target)
+        {
+            // Add a custom material with a noise texture effect
+            // We'll use a procedural pattern generator
+            PatternGenerator patternGen = target.AddComponent<PatternGenerator>();
+            patternGen.patternScale = 4f;
+            patternGen.patternOpacity = 0.1f;
+        }
+        
         public void UpdateHealthBar(float healthPercent)
         {
             if (healthBarFill != null)
@@ -183,6 +333,12 @@ public class PlayerHealth : MonoBehaviour
                 // Update color based on health percentage
                 Image image = healthBarFill.GetComponent<Image>();
                 image.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                
+                // Make the bar pulse when health is low
+                if (healthPercent < 0.25f)
+                {
+                    PulseEffect(healthBarFill, 0.8f, 1f, Color.red);
+                }
             }
         }
 
@@ -201,7 +357,46 @@ public class PlayerHealth : MonoBehaviour
                 
                 // Update color based on stamina percentage
                 Image image = staminaBarFill.GetComponent<Image>();
-                image.color = Color.Lerp(Color.gray, Color.blue, staminaPercent);
+                image.color = Color.Lerp(new Color(0.5f, 0.5f, 0.8f), new Color(0.2f, 0.4f, 1f), staminaPercent);
+                
+                // Make the bar flash when stamina is critically low
+                if (staminaPercent < 0.15f)
+                {
+                    PulseEffect(staminaBarPulse, 0f, 0.3f, new Color(1f, 1f, 1f, 0.7f));
+                }
+            }
+        }
+        
+        private void PulseEffect(GameObject target, float minAlpha, float maxAlpha, Color pulseColor)
+        {
+            Image image = target.GetComponent<Image>();
+            if (image != null)
+            {
+                pulseTime += Time.deltaTime * 5f;
+                float alpha = Mathf.Lerp(minAlpha, maxAlpha, (Mathf.Sin(pulseTime) + 1f) * 0.5f);
+                image.color = new Color(pulseColor.r, pulseColor.g, pulseColor.b, alpha);
+            }
+        }
+        
+        public void UpdatePulseEffects()
+        {
+            // This will be called by the UIAnimationHandler
+            pulseTime += Time.deltaTime * 5f;
+            
+            // Update health bar pulse when health is low
+            if (healthBarFill != null && healthBarFill.GetComponent<Image>().color.g < 0.5f)
+            {
+                Image image = healthBarFill.GetComponent<Image>();
+                float alpha = Mathf.Lerp(0.8f, 1f, (Mathf.Sin(pulseTime) + 1f) * 0.5f);
+                image.color = new Color(image.color.r, image.color.g, image.color.b, alpha);
+            }
+            
+            // Update stamina bar pulse
+            if (staminaBarPulse != null && staminaBarPulse.GetComponent<Image>().color.a > 0)
+            {
+                Image image = staminaBarPulse.GetComponent<Image>();
+                float alpha = Mathf.Lerp(0f, 0.3f, (Mathf.Sin(pulseTime * 1.5f) + 1f) * 0.5f);
+                image.color = new Color(1f, 1f, 1f, alpha);
             }
         }
         
@@ -213,5 +408,110 @@ public class PlayerHealth : MonoBehaviour
             if (staminaBarContainer != null)
                 staminaBarContainer.SetActive(false);
         }
+    }
+}
+
+// This class handles the UI animations
+public class UIAnimationHandler : MonoBehaviour
+{
+    private PlayerHealth.PlayerHealthUI healthUI;
+    
+    public void Initialize(PlayerHealth.PlayerHealthUI ui)
+    {
+        healthUI = ui;
+    }
+    
+    void Update()
+    {
+        if (healthUI != null)
+        {
+            healthUI.UpdatePulseEffects();
+        }
+    }
+}
+
+// Custom component for vertical gradient effect
+public class VerticalGradient : BaseMeshEffect
+{
+    public Color topColor = Color.white;
+    public Color bottomColor = Color.black;
+    
+    public override void ModifyMesh(VertexHelper vh)
+    {
+        if (!IsActive())
+            return;
+            
+        List<UIVertex> vertices = new List<UIVertex>();
+        vh.GetUIVertexStream(vertices);
+        
+        float bottomY = vertices[0].position.y;
+        float topY = vertices[0].position.y;
+        
+        // Find the top and bottom y positions
+        for (int i = 1; i < vertices.Count; i++)
+        {
+            float y = vertices[i].position.y;
+            if (y > topY)
+                topY = y;
+            else if (y < bottomY)
+                bottomY = y;
+        }
+        
+        float height = topY - bottomY;
+        
+        // Apply gradient colors based on y position
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            UIVertex vertex = vertices[i];
+            float normalizedY = Mathf.Clamp01((vertex.position.y - bottomY) / height);
+            vertex.color = Color.Lerp(bottomColor, topColor, normalizedY);
+            vertices[i] = vertex;
+        }
+        
+        vh.Clear();
+        vh.AddUIVertexTriangleStream(vertices);
+    }
+}
+
+// Custom component for generating pattern texture effect
+public class PatternGenerator : BaseMeshEffect
+{
+    public float patternScale = 10f;
+    public float patternOpacity = 0.2f;
+    
+    public override void ModifyMesh(VertexHelper vh)
+    {
+        if (!IsActive())
+            return;
+            
+        List<UIVertex> vertices = new List<UIVertex>();
+        vh.GetUIVertexStream(vertices);
+        
+        // Apply a procedural pattern to each vertex
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            UIVertex vertex = vertices[i];
+            
+            // Create a noise-like pattern based on position
+            float x = vertex.position.x / patternScale;
+            float y = vertex.position.y / patternScale;
+            
+            // Simple pattern formula (can be adjusted for different effects)
+            float pattern = Mathf.Sin(x) * Mathf.Sin(y) * patternOpacity;
+            
+            // Apply pattern to vertex color
+            Color baseColor = vertex.color;
+            vertex.color = new Color(
+                Mathf.Clamp01(baseColor.r + pattern),
+                Mathf.Clamp01(baseColor.g + pattern),
+                Mathf.Clamp01(baseColor.b + pattern),
+                baseColor.a
+            );
+            
+            vertices[i] = vertex;
+        }
+        
+        vh.Clear();
+        vh.AddUIVertexTriangleStream(vertices);
     }
 }
