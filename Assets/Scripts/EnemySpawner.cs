@@ -1,77 +1,148 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using System;
 
-public class EnemySpawner : MonoBehaviour
+public class EnemySpawner : MonoBehaviour 
 {
-    public int numberOfEnemies = 10; // Total enemies to spawn
-    public float spawnInterval = 1.0f; // Time between spawns in seconds
-    public Transform spawnPoint; // Location where enemies will spawn (optional)
-    private HashSet<Enemy> enemies;
-    private bool isPaused = false;
-    private Coroutine spawnCoroutine;
-
-    public void StartSpawning()
+    [Serializable]
+    public class RoundConfiguration
     {
-        // Start the spawning coroutine
-        enemies = new HashSet<Enemy>(numberOfEnemies);
-        StartCoroutine(SpawnEnemies());
+        public EnemyType[] enemyTypes;
+        public int[] enemyCounts;
     }
 
-    private IEnumerator SpawnEnemies()
+    public enum EnemyType
     {
-        int enemiesSpawned = 0;
-        while (enemiesSpawned < numberOfEnemies)
-        {
-            if (!isPaused)
-            {
-                // Increment counter
-                enemiesSpawned++;
-                // Spawn an enemy
-                enemies.Add(SpawnEnemy(enemiesSpawned));
-                // Wait for the next spawn only if not paused
-                yield return new WaitForSeconds(spawnInterval);
+        SlimeEnemy,
+        MageEnemy,
+        Boss1Enemy
+    }
+
+    [Header("Round Configurations")]
+    public RoundConfiguration[] rounds = {
+        new RoundConfiguration() { 
+            enemyTypes = new[] { EnemyType.SlimeEnemy }, 
+            enemyCounts = new[] { 10 } 
+        },
+        new RoundConfiguration() { 
+            enemyTypes = new[] { EnemyType.SlimeEnemy, EnemyType.MageEnemy }, 
+            enemyCounts = new[] { 5, 5 } 
+        },
+        new RoundConfiguration() { 
+            enemyTypes = new[] { EnemyType.Boss1Enemy }, 
+            enemyCounts = new[] { 1 } 
+        }
+    };
+
+    [Header("Spawn Settings")]
+    public float spawnInterval = 1.0f;
+    public Transform spawnPoint;
+    public float delayBetweenRounds = 5f;
+
+    private HashSet<Enemy> currentEnemies;
+    private int currentRound = 0;
+    private bool isPaused = false;
+    
+    public void StartSpawning()
+    {
+        StartCoroutine(SpawnRounds());
+    }
+
+    private IEnumerator SpawnRounds()
+    {
+        for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++) {
+            currentRound = roundIndex;
+            currentEnemies = new HashSet<Enemy>();
+
+            bool cambios = true;
+            // Intercalar spawns de diferentes tipos de enemigos
+            for (int spawnIndex = 0; cambios; spawnIndex++) {
+                cambios = false;
+                for (int typeIndex = 0; typeIndex < rounds[roundIndex].enemyTypes.Length; typeIndex++) {
+                    // Solo spawna si aún quedan enemigos de este tipo por spawnar
+                    if (spawnIndex < rounds[roundIndex].enemyCounts[typeIndex]) {
+                        cambios = true;
+                        EnemyType enemyType = rounds[roundIndex].enemyTypes[typeIndex];
+                        //Debug.Log("spawneando intervalo " + spawnInterval);
+                        yield return new WaitForSeconds(spawnInterval);
+                        //Debug.Log("esperados 5s");
+                        while (isPaused) {
+                            yield return new WaitForSeconds(1);
+                            //Debug.Log("esperados 1s");
+                        }
+
+                        Enemy newEnemy = SpawnEnemy(enemyType, spawnIndex);
+                        currentEnemies.Add(newEnemy);
+                    }
+                }
             }
-            else
-            {
-                // Just yield for a second while paused
-                yield return new WaitForSeconds(1);
-            }
+
+            // Esperar a que todos los enemigos sean derrotados
+            yield return StartCoroutine(WaitForEnemiesDefeated());
+
+            // Esperar entre rondas
+            yield return new WaitForSeconds(delayBetweenRounds);
         }
     }
 
-    private Enemy SpawnEnemy(int enemyId)
+    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId)
     {
-        // If spawnPoint is assigned, spawn at that position
-        // Otherwise spawn at the spawner's position
         Vector3 position = (spawnPoint != null) ? spawnPoint.position : transform.position;
+        
+        GameObject enemyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        enemyObject.name = $"{enemyType}_" + enemyId;
+        enemyObject.transform.position = position;
 
-        // Create a new GameObject for the enemy
-        GameObject enemy = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        enemy.name = "EnemyCapsule_" + enemyId;
-        enemy.transform.position = position;
-
-        // Add rigidbody for physics
-        Rigidbody rb = enemy.AddComponent<Rigidbody>();
+        Rigidbody rb = enemyObject.AddComponent<Rigidbody>();
         rb.isKinematic = false;
 
-        // Add enemy behavior script
-        Enemy enemyScript = enemy.AddComponent<Enemy>();
-        Debug.Log("Enemy capsule created: " + enemy.name);
+        Enemy enemyScript = null;
+        switch (enemyType)
+        {
+            case EnemyType.SlimeEnemy:
+                enemyScript = enemyObject.AddComponent<SlimeEnemy>();
+                break;
+            case EnemyType.MageEnemy:
+                enemyScript = enemyObject.AddComponent<MageEnemy>();
+                break;
+            case EnemyType.Boss1Enemy:
+                enemyScript = enemyObject.AddComponent<Boss1Enemy>();
+                break;
+        }
 
+        Debug.Log($"Enemy created: {enemyObject.name}");
         return enemyScript;
     }
 
-    public void PauseAllEnemies(bool pauseEnemies) {
-        isPaused = pauseEnemies;
+    private IEnumerator WaitForEnemiesDefeated()
+    {
+        while (currentEnemies.Count > 0)
+        {
+            // Remove any null enemies (defeated)
+            currentEnemies.RemoveWhere(enemy => enemy == null);
+            yield return null;
+        }
+    }
 
-        foreach (var enemy in enemies.Where(enemy => enemy != null)) {
-            enemy.enabled = !pauseEnemies;
-            if (pauseEnemies) {
+    public void PauseAllEnemies(bool pauseEnemies)
+    {
+        if (currentEnemies == null) {
+            return;
+        }
+        
+        isPaused = pauseEnemies;
+        foreach (var enemy in currentEnemies)
+        {
+            if (enemy != null)
+            {
+                enemy.enabled = !pauseEnemies;
                 Rigidbody rb = enemy.GetComponent<Rigidbody>();
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
             }
         }
     }

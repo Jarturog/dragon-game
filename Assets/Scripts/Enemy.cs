@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+public abstract class Enemy : MonoBehaviour
 {
     public float maxHealth = 100f;
     public float health = 100f;
@@ -22,7 +22,7 @@ public class Enemy : MonoBehaviour
     private EnemyState _currentState;
     private float _lastAttackTime;
 
-    void Start() {
+    protected void Start() {
         gameObject.SetActive(true);
         if (player == null)
         {
