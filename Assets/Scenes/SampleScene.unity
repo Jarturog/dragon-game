@@ -3383,9 +3383,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e8ff5e78e6ce974db3c70e155039acb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfEnemies: 10
+  rounds:
+  - enemyTypes: 00000000
+    enemyCounts: 0a000000
+  - enemyTypes: 0000000001000000
+    enemyCounts: 0500000005000000
+  - enemyTypes: 02000000
+    enemyCounts: 01000000
   spawnInterval: 1
   spawnPoint: {fileID: 0}
+  delayBetweenRounds: 5
 --- !u!4 &614354142
 Transform:
   m_ObjectHideFlags: 0
