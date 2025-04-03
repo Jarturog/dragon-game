@@ -2,9 +2,14 @@ using UnityEngine;
 
 public class MageEnemy : Enemy
 {
-    new void Start() {
-        base.Start();
-        Renderer renderer = GetComponent<Renderer>();
-        if (renderer != null) renderer.material.color = Color.blue;
+    public static GameObject gameObjectToInstantiate;
+
+    private void Awake() {
+        gameObjectToInstantiate = GameObject.FindWithTag("MageEnemy");
+        if (gameObjectToInstantiate == null) {
+            Debug.LogError("UEP: mage is null");
+        }
+        
+        GetComponent<Enemy>().enabled = false;
     }
 }

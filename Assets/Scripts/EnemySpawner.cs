@@ -89,28 +89,30 @@ public class EnemySpawner : MonoBehaviour
     private Enemy SpawnEnemy(EnemyType enemyType, int enemyId)
     {
         Vector3 position = (spawnPoint != null) ? spawnPoint.position : transform.position;
+
+        GameObject gbToInstantiate = null;
+        switch (enemyType)
+        {
+            case EnemyType.SlimeEnemy:
+                gbToInstantiate = SlimeEnemy.gameObjectToInstantiate;
+                break;
+            case EnemyType.MageEnemy:
+                gbToInstantiate = MageEnemy.gameObjectToInstantiate;
+                break;
+            case EnemyType.Boss1Enemy:
+                Debug.LogError("TODO");
+                break;
+        }
         
-        GameObject enemyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        GameObject enemyObject = Instantiate(gbToInstantiate, position, Quaternion.identity);
         enemyObject.name = $"{enemyType}_" + enemyId;
-        enemyObject.transform.position = position;
 
         Rigidbody rb = enemyObject.AddComponent<Rigidbody>();
         rb.isKinematic = false;
 
-        Enemy enemyScript = null;
-        switch (enemyType)
-        {
-            case EnemyType.SlimeEnemy:
-                enemyScript = enemyObject.AddComponent<SlimeEnemy>();
-                break;
-            case EnemyType.MageEnemy:
-                enemyScript = enemyObject.AddComponent<MageEnemy>();
-                break;
-            case EnemyType.Boss1Enemy:
-                enemyScript = enemyObject.AddComponent<Boss1Enemy>();
-                break;
-        }
-
+        Enemy enemyScript = enemyObject.GetComponent<Enemy>();
+        enemyScript.enabled = true;
+        
         Debug.Log($"Enemy created: {enemyObject.name}");
         return enemyScript;
     }

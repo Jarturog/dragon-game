@@ -5,14 +5,12 @@ using System.Collections.Generic;
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Health Settings")]
-    [Range(0f, 1f)]
-    public float healthBarOccupiedSpace = 0.4f;
+    [Range(0f, 100f)]
     public float maxHealth = 100f;
     public float currentHealth;
     
     [Header("Stamina Settings")]
-    [Range(0f, 1f)]
-    public float staminaBarOccupiedSpace = 0.2f;
+    [Range(0f, 100f)]
     public float maxStamina = 100f;
     public float currentStamina;
     public float staminaRegenRate = 10f;
@@ -21,13 +19,24 @@ public class PlayerHealth : MonoBehaviour
     public float attackStaminaCost = 5f;
     
     [Header("Auto Healing")]
-    public float autoHealDelay = 5f;         // Tiempo sin recibir daño antes de comenzar a curarse
-    public float autoHealRate = 2f;          // Cantidad de salud recuperada por segundo
-    private float _lastDamageTime;            // Momento en que se recibió el último daño
-    private bool _isAutoHealing;      // Indica si la curación automática está activa
+    public float autoHealDelay = 5f;
+    public float autoHealRate = 2f;
+    private float _lastDamageTime;
+    private bool _isAutoHealing;
+    
+    [Header("UI References")]
+    public Canvas uiCanvas;
+    public GameObject healthBarContainer;
+    public Image healthBarFill;
+    
+    public GameObject staminaBarContainer;
+    public Image staminaBarFill;
+    public Image staminaBarPulse;
     
     private PlayerController _playerController;
-    public PlayerHealthUI healthUI;
+    [HideInInspector] public PlayerHealthUI healthUI;
+    
+    private bool _uiInitialized = false;
     
     void Start()
     {
@@ -35,45 +44,61 @@ public class PlayerHealth : MonoBehaviour
         currentStamina = maxStamina;
         _playerController = GetComponent<PlayerController>();
     
-        // Inicializar el tiempo del último daño
-        _lastDamageTime = -autoHealDelay;  // Para permitir curación desde el inicio si no hay daño
+        _lastDamageTime = -autoHealDelay;
     
-        // Pasa las variables a la UI
-        healthUI = new PlayerHealthUI(healthBarOccupiedSpace, staminaBarOccupiedSpace);
+        // Initialize the UI
+        InitializeUI();
+    }
+    
+    void InitializeUI() {
+        // If UI components are already assigned in inspector
+        if (uiCanvas == null || healthBarFill == null || staminaBarFill == null) {
+            Debug.LogError("Health UI canvas not set");
+            return;
+        }
+        
+        // Create UI wrapper to maintain compatibility with MainMenuManager
+        healthUI = new PlayerHealthUI(this);
+        _uiInitialized = true;
     }
     
     void Update()
     {
+        if (!_uiInitialized)
+            InitializeUI();
+            
         // Regenerate stamina when not running
-        if (!_playerController.isRunning)
+        if (_playerController != null && !_playerController.isRunning)
         {
             RegenerateStamina();
         }
         
-        // Verificar si debe comenzar la curación automática
+        // Check auto heal
         CheckAutoHeal();
+        
+        healthUI.UpdatePulseEffects();
     }
     
     private void CheckAutoHeal()
     {
-        // Si ha pasado suficiente tiempo desde el último daño
+        // If enough time has passed since the last damage
         if (Time.time - _lastDamageTime >= autoHealDelay)
         {
-            // Si no estamos sanando y la salud no está al máximo, activar indicador
+            // If we're not healing and health isn't at max, activate indicator
             if (!_isAutoHealing && currentHealth < maxHealth)
             {
                 _isAutoHealing = true;
                 Debug.Log("Auto healing activated");
             }
         
-            // Aplicar curación si la salud no está al máximo
+            // Apply healing if health isn't at max
             if (currentHealth < maxHealth)
             {
                 float healAmount = autoHealRate * Time.deltaTime;
                 currentHealth = Mathf.Min(currentHealth + healAmount, maxHealth);
                 healthUI.UpdateHealthBar(currentHealth / maxHealth);
             
-                // Si llegamos a la salud máxima, desactivar la curación automática
+                // If we reach max health, deactivate auto healing
                 if (currentHealth >= maxHealth)
                 {
                     _isAutoHealing = false;
@@ -83,7 +108,7 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            // Si estábamos sanando y ahora no, desactivar indicador
+            // If we were healing and now we're not, deactivate indicator
             if (_isAutoHealing)
             {
                 _isAutoHealing = false;
@@ -95,10 +120,10 @@ public class PlayerHealth : MonoBehaviour
     public void TakeDamage(float damage)
     {
         if (currentHealth > 0) {
-            // Registrar el momento del daño para reiniciar el temporizador de curación
+            // Record the time of damage to reset the healing timer
             _lastDamageTime = Time.time;
             
-            // Desactivar la curación automática
+            // Deactivate auto healing
             _isAutoHealing = false;
             
             currentHealth -= damage;
@@ -154,247 +179,62 @@ public class PlayerHealth : MonoBehaviour
         enabled = false;
     }
     
-    // UI class for health and stamina bars
+    // UI class for health and stamina bars - modified to work with either editor or code-created UI
     public class PlayerHealthUI
     {
         private GameObject healthBarContainer;
-        private GameObject healthBarBackground;
-        private GameObject healthBarFill;
-        private GameObject healthBarBorder;
-        private GameObject healthBarHighlight;
-        private GameObject healthBarSegments;
+        private Image healthBarFill;
         
         private GameObject staminaBarContainer;
-        private GameObject staminaBarBackground;
-        private GameObject staminaBarFill;
-        private GameObject staminaBarBorder;
-        private GameObject staminaBarHighlight;
-        private GameObject staminaBarPulse;
+        private Image staminaBarFill;
+        private Image staminaBarPulse;
         
-        private Canvas uiCanvas;
         private float pulseTime = 0f;
         
-        // Variables para controlar el estado de los efectos
+        // Variables for controlling effect states
         private bool isHealthCritical = false;
         private bool isStaminaCritical = false;
+
+        private GameObject coroutineHandler;
         
-        private float healthBarWidth;
-        private float staminaBarWidth;
-    
-        public PlayerHealthUI(float healthBarWidth, float staminaBarWidth)
+        // Constructor for editor-assigned UI
+        public PlayerHealthUI(PlayerHealth health)
         {
-            this.healthBarWidth = healthBarWidth;
-            this.staminaBarWidth = staminaBarWidth;
+            // Use UI components assigned in the inspector
+            this.healthBarContainer = health.healthBarContainer;
+            this.healthBarFill = health.healthBarFill;
             
-            // Create Canvas for UI elements
-            GameObject canvasObject = new GameObject("PlayerHealthCanvas");
-            uiCanvas = canvasObject.AddComponent<Canvas>();
-            uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            this.staminaBarContainer = health.staminaBarContainer;
+            this.staminaBarFill = health.staminaBarFill;
+            this.staminaBarPulse = health.staminaBarPulse;
             
-            // Add canvas scaler for proper resolution handling
-            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-            
-            canvasObject.AddComponent<GraphicRaycaster>();
-            
-            // Create root container for all UI
-            GameObject uiContainer = new GameObject("UIContainer");
-            uiContainer.transform.SetParent(uiCanvas.transform, false);
-            RectTransform containerRect = uiContainer.AddComponent<RectTransform>();
-            containerRect.anchorMin = Vector2.zero;
-            containerRect.anchorMax = Vector2.one;
-            containerRect.offsetMin = Vector2.zero;
-            containerRect.offsetMax = Vector2.zero;
-            
-            // Create health bar container in top right corner
-            healthBarContainer = CreateUIContainer("HealthBarContainer", new Vector2(-20, -100), new Vector2(180, 20));
-            healthBarContainer.transform.SetParent(uiContainer.transform, false);
-            RectTransform healthRect = healthBarContainer.GetComponent<RectTransform>();
-            healthRect.anchorMin = new Vector2(1 - this.healthBarWidth, 1);
-            healthRect.anchorMax = new Vector2(1, 1);
-            healthRect.offsetMin = new Vector2(0, -35);
-            healthRect.offsetMax = new Vector2(-20, -10);
-            
-            // Create drop shadow effect
-            GameObject healthDropShadow = CreateUIElement("HealthDropShadow", healthBarContainer.transform, new Color(0, 0, 0, 0.5f), new Vector2(3, -3));
-            RectTransform shadowRect = healthDropShadow.GetComponent<RectTransform>();
-            shadowRect.sizeDelta = new Vector2(6, 6);
-            
-            // Create health bar background with gradient
-            healthBarBackground = CreateUIElement("HealthBarBackground", healthBarContainer.transform, Color.black, Vector2.zero);
-            AddGradientEffect(healthBarBackground, new Color(0.1f, 0.1f, 0.1f), new Color(0.2f, 0.2f, 0.2f));
-            
-            // Create health bar fill with texture effect
-            healthBarFill = CreateUIElement("HealthBarFill", healthBarBackground.transform, Color.green, Vector2.zero);
-            AddTextureEffect(healthBarFill);
-            
-            // Create health bar segments
-            healthBarSegments = CreateSegments("HealthBarSegments", healthBarFill.transform, 10, new Color(0, 0, 0, 0.15f));
-            
-            // Create highlight at the top of the health bar
-            healthBarHighlight = CreateUIElement("HealthBarHighlight", healthBarFill.transform, new Color(1, 1, 1, 0.3f), new Vector2(0, 0));
-            RectTransform highlightRect = healthBarHighlight.GetComponent<RectTransform>();
-            highlightRect.anchorMin = new Vector2(0, 0.8f);
-            highlightRect.anchorMax = new Vector2(1, 1);
-            highlightRect.offsetMin = Vector2.zero;
-            highlightRect.offsetMax = Vector2.zero;
-            
-            // Create border for health bar
-            healthBarBorder = CreateBorder("HealthBarBorder", healthBarBackground.transform, 2f, new Color(0.3f, 0.3f, 0.3f));
-            
-            // Create stamina bar container below health bar
-            staminaBarContainer = CreateUIContainer("StaminaBarContainer", new Vector2(-20, -125), new Vector2(180, 15));
-            staminaBarContainer.transform.SetParent(uiContainer.transform, false);
-            RectTransform staminaRect = staminaBarContainer.GetComponent<RectTransform>();
-            staminaRect.anchorMin = new Vector2(1 - this.staminaBarWidth, 1);
-            staminaRect.anchorMax = new Vector2(1, 1);
-            staminaRect.offsetMin = new Vector2(0, -65);
-            staminaRect.offsetMax = new Vector2(-20, -45);
-            
-            // Create drop shadow effect for stamina bar
-            GameObject staminaDropShadow = CreateUIElement("StaminaDropShadow", staminaBarContainer.transform, new Color(0, 0, 0, 0.5f), new Vector2(3, -3));
-            RectTransform staminaShadowRect = staminaDropShadow.GetComponent<RectTransform>();
-            staminaShadowRect.sizeDelta = new Vector2(6, 6);
-            
-            // Create stamina bar background with gradient
-            staminaBarBackground = CreateUIElement("StaminaBarBackground", staminaBarContainer.transform, Color.black, Vector2.zero);
-            AddGradientEffect(staminaBarBackground, new Color(0.1f, 0.1f, 0.15f), new Color(0.15f, 0.15f, 0.2f));
-            
-            // Create stamina bar fill with texture effect
-            staminaBarFill = CreateUIElement("StaminaBarFill", staminaBarBackground.transform, Color.blue, Vector2.zero);
-            AddTextureEffect(staminaBarFill);
-            
-            // Create pulse effect overlay - inicialmente transparente
-            staminaBarPulse = CreateUIElement("StaminaBarPulse", staminaBarFill.transform, new Color(1f, 1f, 1f, 0f), Vector2.zero);
-            
-            // Create highlight at the top of the stamina bar
-            staminaBarHighlight = CreateUIElement("StaminaBarHighlight", staminaBarFill.transform, new Color(1, 1, 1, 0.3f), new Vector2(0, 0));
-            RectTransform staminaHighlightRect = staminaBarHighlight.GetComponent<RectTransform>();
-            staminaHighlightRect.anchorMin = new Vector2(0, 0.8f);
-            staminaHighlightRect.anchorMax = new Vector2(1, 1);
-            staminaHighlightRect.offsetMin = Vector2.zero;
-            staminaHighlightRect.offsetMax = Vector2.zero;
-            
-            // Create border for stamina bar
-            staminaBarBorder = CreateBorder("StaminaBarBorder", staminaBarBackground.transform, 1.5f, new Color(0.3f, 0.3f, 0.5f));
-            
-            // Start the animation coroutine for pulse effects
-            GameObject coroutineHandler = new GameObject("UIAnimationHandler");
-            coroutineHandler.transform.SetParent(canvasObject.transform);
-            UIAnimationHandler animHandler = coroutineHandler.AddComponent<UIAnimationHandler>();
-            animHandler.Initialize(this);
+            // Setup special effects for the editor-assigned UI
+            SetupEditorUIEffects();
         }
         
-        private GameObject CreateUIContainer(string name, Vector2 position, Vector2 size)
+        private void SetupEditorUIEffects()
         {
-            GameObject container = new GameObject(name);
-            
-            RectTransform rect = container.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(1, 1);
-            rect.anchorMax = new Vector2(1, 1);
-            rect.pivot = new Vector2(1, 1);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            
-            return container;
-        }
-        
-        private GameObject CreateUIElement(string name, Transform parent, Color color, Vector2 position)
-        {
-            GameObject element = new GameObject(name);
-            element.transform.SetParent(parent, false);
-            
-            RectTransform rect = element.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0, 0);
-            rect.anchorMax = new Vector2(1, 1);
-            rect.pivot = new Vector2(0, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = Vector2.zero;
-            
-            Image image = element.AddComponent<Image>();
-            image.color = color;
-            
-            return element;
-        }
-        
-        private GameObject CreateBorder(string name, Transform parent, float thickness, Color color)
-        {
-            GameObject border = new GameObject(name);
-            border.transform.SetParent(parent, false);
-            
-            RectTransform rect = border.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0, 0);
-            rect.anchorMax = new Vector2(1, 1);
-            rect.offsetMin = new Vector2(-thickness, -thickness);
-            rect.offsetMax = new Vector2(thickness, thickness);
-            
-            // Use the outline image effect for the border
-            Outline outline = border.AddComponent<Outline>();
-            outline.effectColor = color;
-            outline.effectDistance = new Vector2(thickness, thickness);
-            
-            return border;
-        }
-        
-        private GameObject CreateSegments(string name, Transform parent, int segmentCount, Color color)
-        {
-            GameObject segmentsContainer = new GameObject(name);
-            segmentsContainer.transform.SetParent(parent, false);
-            
-            RectTransform containerRect = segmentsContainer.AddComponent<RectTransform>();
-            containerRect.anchorMin = new Vector2(0, 0);
-            containerRect.anchorMax = new Vector2(1, 1);
-            containerRect.offsetMin = Vector2.zero;
-            containerRect.offsetMax = Vector2.zero;
-            
-            float segmentWidth = 1f / segmentCount;
-            
-            for (int i = 1; i < segmentCount; i++)
+            if (healthBarFill != null)
             {
-                GameObject segment = new GameObject("Segment" + i);
-                segment.transform.SetParent(segmentsContainer.transform, false);
-                
-                RectTransform rect = segment.AddComponent<RectTransform>();
-                rect.anchorMin = new Vector2(segmentWidth * i, 0);
-                rect.anchorMax = new Vector2(segmentWidth * i + 0.005f, 1);
-                rect.offsetMin = Vector2.zero;
-                rect.offsetMax = Vector2.zero;
-                
-                Image image = segment.AddComponent<Image>();
-                image.color = color;
+                // Add texture effect to health bar
+                if (healthBarFill.gameObject.GetComponent<PatternGenerator>() == null)
+                {
+                    PatternGenerator patternGen = healthBarFill.gameObject.AddComponent<PatternGenerator>();
+                    patternGen.patternScale = 4f;
+                    patternGen.patternOpacity = 0.1f;
+                }
             }
             
-            return segmentsContainer;
-        }
-        
-        private void AddGradientEffect(GameObject target, Color topColor, Color bottomColor)
-        {
-            Image image = target.GetComponent<Image>();
-            if (image != null)
+            if (staminaBarFill != null)
             {
-                // Create a vertical gradient
-                Gradient gradient = new Gradient();
-                gradient.SetKeys(
-                    new GradientColorKey[] { new GradientColorKey(bottomColor, 0.0f), new GradientColorKey(topColor, 1.0f) },
-                    new GradientAlphaKey[] { new GradientAlphaKey(1.0f, 0.0f), new GradientAlphaKey(1.0f, 1.0f) }
-                );
-                
-                // Add a custom material with shader to apply the gradient
-                // Since we can't directly use shaders, we'll use a workaround with UI Vertex helper
-                VerticalGradient vertGradient = target.AddComponent<VerticalGradient>();
-                vertGradient.topColor = topColor;
-                vertGradient.bottomColor = bottomColor;
+                // Add texture effect to stamina bar
+                if (staminaBarFill.gameObject.GetComponent<PatternGenerator>() == null)
+                {
+                    PatternGenerator patternGen = staminaBarFill.gameObject.AddComponent<PatternGenerator>();
+                    patternGen.patternScale = 4f;
+                    patternGen.patternOpacity = 0.1f;
+                }
             }
-        }
-        
-        private void AddTextureEffect(GameObject target)
-        {
-            // Add a custom material with a noise texture effect
-            // We'll use a procedural pattern generator
-            PatternGenerator patternGen = target.AddComponent<PatternGenerator>();
-            patternGen.patternScale = 4f;
-            patternGen.patternOpacity = 0.1f;
         }
         
         public void UpdateHealthBar(float healthPercent)
@@ -404,15 +244,10 @@ public class PlayerHealth : MonoBehaviour
                 // Clamp health percent between 0 and 1
                 healthPercent = Mathf.Clamp01(healthPercent);
                 
-                // Get the RectTransform
                 RectTransform rect = healthBarFill.GetComponent<RectTransform>();
-                
-                // Change width to represent current health (reducing from left to right)
                 rect.offsetMin = new Vector2((1 - healthPercent) * rect.parent.GetComponent<RectTransform>().rect.width, rect.offsetMin.y);
-                
+
                 // Update color based on health percentage
-                Image image = healthBarFill.GetComponent<Image>();
-                
                 // Verifica si la salud está en estado crítico
                 bool shouldBeCritical = healthPercent < 0.25f;
                 
@@ -424,7 +259,7 @@ public class PlayerHealth : MonoBehaviour
                     // Si la salud ya no es crítica, restablecemos el color normal con la opacidad completa
                     if (!isHealthCritical)
                     {
-                        image.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                        healthBarFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
                     }
                 }
                 else
@@ -432,7 +267,7 @@ public class PlayerHealth : MonoBehaviour
                     // Actualización regular del color basado en el porcentaje de salud
                     if (!isHealthCritical)
                     {
-                        image.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                        healthBarFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
                     }
                 }
             }
@@ -445,15 +280,11 @@ public class PlayerHealth : MonoBehaviour
                 // Clamp stamina percent between 0 and 1
                 staminaPercent = Mathf.Clamp01(staminaPercent);
                 
-                // Get the RectTransform
                 RectTransform rect = staminaBarFill.GetComponent<RectTransform>();
-                
-                // Change width to represent current stamina (reducing from left to right)
                 rect.offsetMin = new Vector2((1 - staminaPercent) * rect.parent.GetComponent<RectTransform>().rect.width, rect.offsetMin.y);
                 
                 // Update color based on stamina percentage
-                Image image = staminaBarFill.GetComponent<Image>();
-                image.color = Color.Lerp(new Color(0.5f, 0.5f, 0.8f), new Color(0.2f, 0.4f, 1f), staminaPercent);
+                staminaBarFill.color = Color.Lerp(new Color(0.5f, 0.5f, 0.8f), new Color(0.2f, 0.4f, 1f), staminaPercent);
                 
                 // Verifica si la estamina está en estado crítico
                 bool shouldBeCritical = staminaPercent < 0.15f;
@@ -464,10 +295,9 @@ public class PlayerHealth : MonoBehaviour
                     isStaminaCritical = shouldBeCritical;
                     
                     // Si ya no es crítico, hacemos el pulso completamente transparente
-                    if (!isStaminaCritical)
+                    if (!isStaminaCritical && staminaBarPulse != null)
                     {
-                        Image pulseImage = staminaBarPulse.GetComponent<Image>();
-                        pulseImage.color = new Color(1f, 1f, 1f, 0f);
+                        staminaBarPulse.color = new Color(1f, 1f, 1f, 0f);
                     }
                 }
             }
@@ -481,18 +311,16 @@ public class PlayerHealth : MonoBehaviour
             // Solo actualizar el pulso de salud si está en estado crítico
             if (isHealthCritical && healthBarFill != null)
             {
-                Image healthImage = healthBarFill.GetComponent<Image>();
                 float alpha = Mathf.Lerp(0.8f, 1f, (Mathf.Sin(pulseTime) + 1f) * 0.5f);
                 Color baseColor = Color.Lerp(Color.red, new Color(1f, 0.3f, 0.3f), (Mathf.Sin(pulseTime) + 1f) * 0.5f);
-                healthImage.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+                healthBarFill.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
             }
             
             // Solo actualizar el pulso de estamina si está en estado crítico
             if (isStaminaCritical && staminaBarPulse != null)
             {
-                Image pulseImage = staminaBarPulse.GetComponent<Image>();
                 float alpha = Mathf.Lerp(0f, 0.3f, (Mathf.Sin(pulseTime * 1.5f) + 1f) * 0.5f);
-                pulseImage.color = new Color(1f, 1f, 1f, alpha);
+                staminaBarPulse.color = new Color(1f, 1f, 1f, alpha);
             }
         }
         
@@ -512,25 +340,6 @@ public class PlayerHealth : MonoBehaviour
     
             if (staminaBarContainer != null)
                 staminaBarContainer.SetActive(true);
-        }
-    }
-}
-
-// This class handles the UI animations
-public class UIAnimationHandler : MonoBehaviour
-{
-    private PlayerHealth.PlayerHealthUI healthUI;
-    
-    public void Initialize(PlayerHealth.PlayerHealthUI ui)
-    {
-        healthUI = ui;
-    }
-    
-    void Update()
-    {
-        if (healthUI != null)
-        {
-            healthUI.UpdatePulseEffects();
         }
     }
 }
