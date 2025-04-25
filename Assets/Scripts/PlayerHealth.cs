@@ -182,31 +182,31 @@ public class PlayerHealth : MonoBehaviour
     // UI class for health and stamina bars - modified to work with either editor or code-created UI
     public class PlayerHealthUI
     {
-        private GameObject healthBarContainer;
-        private Image healthBarFill;
+        private readonly GameObject _healthBarContainer;
+        private readonly Image _healthBarFill;
         
-        private GameObject staminaBarContainer;
-        private Image staminaBarFill;
-        private Image staminaBarPulse;
+        private readonly GameObject _staminaBarContainer;
+        private readonly Image _staminaBarFill;
+        private readonly Image _staminaBarPulse;
         
-        private float pulseTime = 0f;
+        private float _pulseTime = 0f;
         
         // Variables for controlling effect states
-        private bool isHealthCritical = false;
-        private bool isStaminaCritical = false;
+        private bool _isHealthCritical = false;
+        private bool _isStaminaCritical = false;
 
-        private GameObject coroutineHandler;
+        private GameObject _coroutineHandler;
         
         // Constructor for editor-assigned UI
         public PlayerHealthUI(PlayerHealth health)
         {
             // Use UI components assigned in the inspector
-            this.healthBarContainer = health.healthBarContainer;
-            this.healthBarFill = health.healthBarFill;
+            this._healthBarContainer = health.healthBarContainer;
+            this._healthBarFill = health.healthBarFill;
             
-            this.staminaBarContainer = health.staminaBarContainer;
-            this.staminaBarFill = health.staminaBarFill;
-            this.staminaBarPulse = health.staminaBarPulse;
+            this._staminaBarContainer = health.staminaBarContainer;
+            this._staminaBarFill = health.staminaBarFill;
+            this._staminaBarPulse = health.staminaBarPulse;
             
             // Setup special effects for the editor-assigned UI
             SetupEditorUIEffects();
@@ -214,23 +214,23 @@ public class PlayerHealth : MonoBehaviour
         
         private void SetupEditorUIEffects()
         {
-            if (healthBarFill != null)
+            if (_healthBarFill != null)
             {
                 // Add texture effect to health bar
-                if (healthBarFill.gameObject.GetComponent<PatternGenerator>() == null)
+                if (_healthBarFill.gameObject.GetComponent<PatternGenerator>() == null)
                 {
-                    PatternGenerator patternGen = healthBarFill.gameObject.AddComponent<PatternGenerator>();
+                    PatternGenerator patternGen = _healthBarFill.gameObject.AddComponent<PatternGenerator>();
                     patternGen.patternScale = 4f;
                     patternGen.patternOpacity = 0.1f;
                 }
             }
             
-            if (staminaBarFill != null)
+            if (_staminaBarFill != null)
             {
                 // Add texture effect to stamina bar
-                if (staminaBarFill.gameObject.GetComponent<PatternGenerator>() == null)
+                if (_staminaBarFill.gameObject.GetComponent<PatternGenerator>() == null)
                 {
-                    PatternGenerator patternGen = staminaBarFill.gameObject.AddComponent<PatternGenerator>();
+                    PatternGenerator patternGen = _staminaBarFill.gameObject.AddComponent<PatternGenerator>();
                     patternGen.patternScale = 4f;
                     patternGen.patternOpacity = 0.1f;
                 }
@@ -239,12 +239,12 @@ public class PlayerHealth : MonoBehaviour
         
         public void UpdateHealthBar(float healthPercent)
         {
-            if (healthBarFill != null)
+            if (_healthBarFill != null)
             {
                 // Clamp health percent between 0 and 1
                 healthPercent = Mathf.Clamp01(healthPercent);
                 
-                RectTransform rect = healthBarFill.GetComponent<RectTransform>();
+                RectTransform rect = _healthBarFill.GetComponent<RectTransform>();
                 rect.offsetMin = new Vector2((1 - healthPercent) * rect.parent.GetComponent<RectTransform>().rect.width, rect.offsetMin.y);
 
                 // Update color based on health percentage
@@ -252,22 +252,22 @@ public class PlayerHealth : MonoBehaviour
                 bool shouldBeCritical = healthPercent < 0.25f;
                 
                 // Solo actualizamos el estado si hay un cambio
-                if (shouldBeCritical != isHealthCritical)
+                if (shouldBeCritical != _isHealthCritical)
                 {
-                    isHealthCritical = shouldBeCritical;
+                    _isHealthCritical = shouldBeCritical;
                     
                     // Si la salud ya no es crítica, restablecemos el color normal con la opacidad completa
-                    if (!isHealthCritical)
+                    if (!_isHealthCritical)
                     {
-                        healthBarFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                        _healthBarFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
                     }
                 }
                 else
                 {
                     // Actualización regular del color basado en el porcentaje de salud
-                    if (!isHealthCritical)
+                    if (!_isHealthCritical)
                     {
-                        healthBarFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
+                        _healthBarFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
                     }
                 }
             }
@@ -275,29 +275,29 @@ public class PlayerHealth : MonoBehaviour
 
         public void UpdateStaminaBar(float staminaPercent)
         {
-            if (staminaBarFill != null)
+            if (_staminaBarFill != null)
             {
                 // Clamp stamina percent between 0 and 1
                 staminaPercent = Mathf.Clamp01(staminaPercent);
                 
-                RectTransform rect = staminaBarFill.GetComponent<RectTransform>();
+                RectTransform rect = _staminaBarFill.GetComponent<RectTransform>();
                 rect.offsetMin = new Vector2((1 - staminaPercent) * rect.parent.GetComponent<RectTransform>().rect.width, rect.offsetMin.y);
                 
                 // Update color based on stamina percentage
-                staminaBarFill.color = Color.Lerp(new Color(0.5f, 0.5f, 0.8f), new Color(0.2f, 0.4f, 1f), staminaPercent);
+                _staminaBarFill.color = Color.Lerp(new Color(0.5f, 0.5f, 0.8f), new Color(0.2f, 0.4f, 1f), staminaPercent);
                 
                 // Verifica si la estamina está en estado crítico
                 bool shouldBeCritical = staminaPercent < 0.15f;
                 
                 // Solo actualizamos el estado si hay un cambio
-                if (shouldBeCritical != isStaminaCritical)
+                if (shouldBeCritical != _isStaminaCritical)
                 {
-                    isStaminaCritical = shouldBeCritical;
+                    _isStaminaCritical = shouldBeCritical;
                     
                     // Si ya no es crítico, hacemos el pulso completamente transparente
-                    if (!isStaminaCritical && staminaBarPulse != null)
+                    if (!_isStaminaCritical && _staminaBarPulse != null)
                     {
-                        staminaBarPulse.color = new Color(1f, 1f, 1f, 0f);
+                        _staminaBarPulse.color = new Color(1f, 1f, 1f, 0f);
                     }
                 }
             }
@@ -306,40 +306,40 @@ public class PlayerHealth : MonoBehaviour
         public void UpdatePulseEffects()
         {
             // Actualizar el tiempo de pulso
-            pulseTime += Time.deltaTime * 5f;
+            _pulseTime += Time.deltaTime * 5f;
             
             // Solo actualizar el pulso de salud si está en estado crítico
-            if (isHealthCritical && healthBarFill != null)
+            if (_isHealthCritical && _healthBarFill != null)
             {
-                float alpha = Mathf.Lerp(0.8f, 1f, (Mathf.Sin(pulseTime) + 1f) * 0.5f);
-                Color baseColor = Color.Lerp(Color.red, new Color(1f, 0.3f, 0.3f), (Mathf.Sin(pulseTime) + 1f) * 0.5f);
-                healthBarFill.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+                float alpha = Mathf.Lerp(0.8f, 1f, (Mathf.Sin(_pulseTime) + 1f) * 0.5f);
+                Color baseColor = Color.Lerp(Color.red, new Color(1f, 0.3f, 0.3f), (Mathf.Sin(_pulseTime) + 1f) * 0.5f);
+                _healthBarFill.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
             }
             
             // Solo actualizar el pulso de estamina si está en estado crítico
-            if (isStaminaCritical && staminaBarPulse != null)
+            if (_isStaminaCritical && _staminaBarPulse != null)
             {
-                float alpha = Mathf.Lerp(0f, 0.3f, (Mathf.Sin(pulseTime * 1.5f) + 1f) * 0.5f);
-                staminaBarPulse.color = new Color(1f, 1f, 1f, alpha);
+                float alpha = Mathf.Lerp(0f, 0.3f, (Mathf.Sin(_pulseTime * 1.5f) + 1f) * 0.5f);
+                _staminaBarPulse.color = new Color(1f, 1f, 1f, alpha);
             }
         }
         
         public void HideUI()
         {
-            if (healthBarContainer != null)
-                healthBarContainer.SetActive(false);
+            if (_healthBarContainer != null)
+                _healthBarContainer.SetActive(false);
     
-            if (staminaBarContainer != null)
-                staminaBarContainer.SetActive(false);
+            if (_staminaBarContainer != null)
+                _staminaBarContainer.SetActive(false);
         }
         
         public void ShowUI()
         {
-            if (healthBarContainer != null)
-                healthBarContainer.SetActive(true);
+            if (_healthBarContainer != null)
+                _healthBarContainer.SetActive(true);
     
-            if (staminaBarContainer != null)
-                staminaBarContainer.SetActive(true);
+            if (_staminaBarContainer != null)
+                _staminaBarContainer.SetActive(true);
         }
     }
 }

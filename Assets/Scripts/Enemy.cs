@@ -8,19 +8,28 @@ public abstract class Enemy : MonoBehaviour
     
     public Transform player;
     
-    private Rigidbody _rb;
+    protected Rigidbody rb;
     
     [Header("Enemy Settings")]
     public float moveForce = 50f;
     public float maxSpeed = 5f;
-    public float attackDistance = 1.5f;
     public float attackCooldown = 1f;
     public float attackDamage = 10f;
+    protected abstract float AttackDistance { get; }
+    protected abstract float FleeDistance { get; }
     
-    // State machine variables
-    private enum EnemyState { Approach, Attack }
-    private EnemyState _currentState;
     private float _lastAttackTime;
+    
+    // State pattern for cleaner behavior management
+    protected enum EnemyState
+    {
+        Approach,
+        Attack,
+        Flee,
+        Idle
+    }
+    
+    protected EnemyState currentState = EnemyState.Idle;
 
     protected void Start() {
         gameObject.SetActive(true);
@@ -30,103 +39,138 @@ public abstract class Enemy : MonoBehaviour
             if (playerObj != null)
                 player = playerObj.transform;
             else
-                Debug.Log("Player was not found");
+                Debug.LogWarning("Player was not found! Enemy behavior will be disabled.");
         }
         
         // Get component
-        _rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
         
         // Setup Rigidbody
-        if (_rb != null)
+        if (rb != null)
         {
-            _rb.freezeRotation = true;  // Prevents tipping over
-            _rb.useGravity = true;
-            _rb.isKinematic = false;
+            rb.freezeRotation = true;  // Prevents tipping over
+            rb.useGravity = true;
+            rb.isKinematic = false;
+            // Add drag for more natural movement
+            rb.linearDamping = 1f;
+        }
+        else
+        {
+            Debug.LogError("Rigidbody component missing from enemy!");
         }
         
         // Set initial state
-        _currentState = EnemyState.Approach;
         _lastAttackTime = -attackCooldown; // Allow immediate attack if in range
         
         _healthBar = gameObject.AddComponent<EnemyHealthBar>();
         _healthBar.Initialize();
     }
 
-    void Update()
-    {
-        if (player == null)
-            return;
-            
-        // Determine state based on distance to player
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        
-        // State transitions
-        switch (_currentState)
-        {
-            case EnemyState.Approach:
-                if (distanceToPlayer <= attackDistance)
-                {
-                    _currentState = EnemyState.Attack;
-                }
-                break;
-                
-            case EnemyState.Attack:
-                if (distanceToPlayer > attackDistance)
-                {
-                    _currentState = EnemyState.Approach;
-                }
-                else if (Time.time >= _lastAttackTime + attackCooldown)
-                {
-                    AttackPlayer();
-                    _lastAttackTime = Time.time;
-                }
-                break;
-        }
-    }
-    
     void FixedUpdate()
     {
-        if (player == null || _rb == null)
+        if (player == null || rb == null)
             return;
-            
-        // Execute current state behavior
-        switch (_currentState)
+
+        // Determine state based on distance
+        UpdateEnemyState();
+        
+        // Execute behavior based on current state
+        ExecuteCurrentState();
+    }
+
+    protected virtual void UpdateEnemyState() 
+    {
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+    
+        // Determine state based on distance
+        if (distanceToPlayer < FleeDistance)
         {
-            case EnemyState.Approach:
-                ApproachPlayer();
-                break;
-                
-            case EnemyState.Attack:
-                // Attack handling is in Update for timing
-                FacePlayer();
-                break;
+            currentState = EnemyState.Flee;
+        }
+        else if (distanceToPlayer <= AttackDistance)
+        {
+            currentState = EnemyState.Attack;
+        }
+        else
+        {
+            currentState = EnemyState.Approach;
         }
     }
     
-    private void ApproachPlayer()
+    protected virtual void ExecuteCurrentState()
     {
-        // Calculate direction to player
-        Vector3 directionToPlayer = player.position - transform.position;
-        directionToPlayer.y = 0; // Keep movement on the horizontal plane
-        directionToPlayer.Normalize();
+        FacePlayer();
         
-        // Apply force to move the enemy
-        _rb.AddForce(directionToPlayer * moveForce, ForceMode.Force);
+        switch (currentState)
+        {
+            case EnemyState.Approach:
+                MoveTowardsTarget(player.position);
+                break;
+                
+            case EnemyState.Flee:
+                var position = transform.position;
+                Vector3 fleePosition = position + (position - player.position).normalized * 10f;
+                MoveTowardsTarget(fleePosition);
+                break;
+                
+            case EnemyState.Attack:
+                StopMoving();
+                TryAttack();
+                break;
+                
+            case EnemyState.Idle:
+                StopMoving();
+                break;
+        }
         
-        // Limit speed
-        Vector3 linearVelocity = _rb.linearVelocity;
+        // Always limit speed after movement
+        LimitSpeed();
+    }
+    
+    protected void TryAttack()
+    {
+        if (Time.time >= _lastAttackTime + attackCooldown)
+        {
+            AttackPlayer();
+            _lastAttackTime = Time.time;
+        }
+    }
+    
+    protected void MoveTowardsTarget(Vector3 targetPosition)
+    {
+        // Calculate movement direction (horizontal only)
+        Vector3 direction = targetPosition - transform.position;
+        direction.y = 0;
+        direction.Normalize();
+        
+        // Apply force to move
+        rb.AddForce(direction * moveForce, ForceMode.Force);
+    }
+
+    protected void StopMoving()
+    {
+        // Apply force opposite to current velocity to slow down
+        Vector3 opposingForce = -rb.linearVelocity * (moveForce * 0.8f);
+        opposingForce.y = 0; // Don't affect vertical movement
+        rb.AddForce(opposingForce, ForceMode.Force);
+    }
+    
+    protected void LimitSpeed()
+    {
+        // Get horizontal velocity (ignore y)
+        var linearVelocity = rb.linearVelocity;
         Vector3 horizontalVelocity = new Vector3(linearVelocity.x, 0, linearVelocity.z);
+        
+        // If over max speed, cap it
         if (horizontalVelocity.magnitude > maxSpeed)
         {
             horizontalVelocity = horizontalVelocity.normalized * maxSpeed;
-            _rb.linearVelocity = new Vector3(horizontalVelocity.x, _rb.linearVelocity.y, horizontalVelocity.z);
+            // Preserve vertical velocity
+            rb.linearVelocity = new Vector3(horizontalVelocity.x, rb.linearVelocity.y, horizontalVelocity.z);
         }
-        
-        // Rotate to face player
-        FacePlayer();
     }
     
-    private void FacePlayer()
+    protected void FacePlayer()
     {
         Vector3 directionToPlayer = player.position - transform.position;
         directionToPlayer.y = 0; // Keep rotation on horizontal plane
@@ -138,7 +182,7 @@ public abstract class Enemy : MonoBehaviour
         }
     }
     
-    private void AttackPlayer()
+    protected virtual void AttackPlayer()
     {
         Debug.Log(gameObject.name + " attacks player for " + attackDamage + " damage!");
     
@@ -150,10 +194,10 @@ public abstract class Enemy : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float damage)
+    public virtual void TakeDamage(float damage)
     {
         health -= damage;
-        Debug.Log(gameObject.name + " recibió " + damage + " puntos de daño. Salud restante: " + health);
+        Debug.Log(gameObject.name + " took " + damage + " damage. Remaining health: " + health);
     
         if (_healthBar != null)
         {
@@ -168,7 +212,7 @@ public abstract class Enemy : MonoBehaviour
 
     private void Die()
     {
-        Debug.Log(gameObject.name + " ha sido derrotado!");
+        Debug.Log(gameObject.name + " has been defeated!");
         Destroy(gameObject);
     }
 }
