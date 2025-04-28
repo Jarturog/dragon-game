@@ -23,11 +23,11 @@ public class EnemySpawner : MonoBehaviour
     public RoundConfiguration[] rounds = {
         new RoundConfiguration() { 
             enemyTypes = new[] { EnemyType.SlimeEnemy }, 
-            enemyCounts = new[] { 10 } 
+            enemyCounts = new[] { 3 } 
         },
         new RoundConfiguration() { 
             enemyTypes = new[] { EnemyType.SlimeEnemy, EnemyType.MageEnemy }, 
-            enemyCounts = new[] { 5, 5 } 
+            enemyCounts = new[] { 3, 3 } 
         },
         new RoundConfiguration() { 
             enemyTypes = new[] { EnemyType.Boss1Enemy }, 
@@ -100,7 +100,7 @@ public class EnemySpawner : MonoBehaviour
                 gbToInstantiate = MageEnemy.gameObjectToInstantiate;
                 break;
             case EnemyType.Boss1Enemy:
-                Debug.LogError("TODO");
+                gbToInstantiate = Boss1Enemy.gameObjectToInstantiate;
                 break;
         }
         

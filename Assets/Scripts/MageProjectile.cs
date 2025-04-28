@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 // Projectile class for the mage's attacks
@@ -19,7 +20,8 @@ public class MageProjectile : Enemy
         _destroyTime = Time.time + lifetime;
         attackDamage = damage;
         player = GameObject.FindGameObjectWithTag("Player").transform;
-        
+        gameObject.AddComponent<Rigidbody>().isKinematic = true;
+
         // Set initial rotation to face direction
         transform.rotation = Quaternion.LookRotation(_direction);
     }

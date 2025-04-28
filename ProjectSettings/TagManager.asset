@@ -9,6 +9,7 @@ TagManager:
   - MageEnemy
   - Ground
   - Projectile
+  - Boss1Enemy
   layers:
   - Default
   - TransparentFX
