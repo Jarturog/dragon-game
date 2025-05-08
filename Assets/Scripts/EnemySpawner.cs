@@ -43,7 +43,12 @@ public class EnemySpawner : MonoBehaviour
     private HashSet<Enemy> currentEnemies;
     private int currentRound = 0;
     private bool isPaused = false;
-    
+    private CirclePointGenerator generadorPuntos;
+
+    private void Start() {
+        generadorPuntos = new CirclePointGenerator(transform.position);
+    }
+
     public void StartSpawning()
     {
         StartCoroutine(SpawnRounds());
@@ -86,9 +91,8 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
-    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId)
-    {
-        Vector3 position = (spawnPoint != null) ? spawnPoint.position : transform.position;
+    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId) {
+        Vector3 position = generadorPuntos.GenerarPunto();//(spawnPoint != null) ? spawnPoint.position : transform.position;
 
         GameObject gbToInstantiate = null;
         switch (enemyType)
@@ -148,4 +152,66 @@ public class EnemySpawner : MonoBehaviour
             }
         }
     }
+    
+    public class CirclePointGenerator
+    {
+        public float radius = 25f;          // Radio del círculo
+        public float minDistance = 1f;     // Distancia mínima entre puntos
+
+        private Vector3 center;            // Centro del círculo
+        private HashSet<Vector3> puntos;   // Conjunto de puntos generados
+
+        public CirclePointGenerator(Vector3 centro) 
+        {
+            puntos = new HashSet<Vector3>();
+            puntos.Add(new Vector3(25, 10, -4));
+            puntos.Add(new Vector3(25, 10, -2));
+            puntos.Add(new Vector3(25, 10, 0));
+            puntos.Add(new Vector3(25, 10, 2));
+            puntos.Add(new Vector3(25, 10, 4));
+            this.center = centro;
+        }
+
+        public Vector3 GenerarPunto() 
+        {
+            Vector3 newPoint = center;
+            bool hayColision = true;
+            int maxIntentos = 100; // Previene bucles infinitos
+            int intentos = 0;
+            
+            while (hayColision && intentos < maxIntentos) 
+            {
+                // Genera un ángulo aleatorio
+                float angle = UnityEngine.Random.Range(0f, 2f * Mathf.PI);
+                
+                // Calcula un punto en la circunferencia (horizontalmente, en plano XZ)
+                newPoint = center + new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
+
+                hayColision = false;
+                foreach (var p in puntos) 
+                {
+                    if (Vector3.Distance(newPoint, p) <= minDistance) 
+                    {
+                        hayColision = true;
+                        break;
+                    }
+                }
+                
+                intentos++;
+
+            }
+            
+            // Si no pudimos encontrar un punto después de muchos intentos
+            if (intentos >= maxIntentos) 
+            {
+                Debug.LogWarning("No se pudo encontrar un punto válido después de " + maxIntentos + " intentos");
+                return newPoint;
+            }
+            
+            puntos.Add(newPoint);
+            Debug.Log("Nuevo punto generado: " + newPoint);
+            return newPoint;
+        }
+    }
+    
 }
