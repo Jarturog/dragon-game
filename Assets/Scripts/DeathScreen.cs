@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEditor.VersionControl;
 
 public class DeathScreen : MonoBehaviour
 {
@@ -80,6 +81,7 @@ public class DeathScreen : MonoBehaviour
     
     private IEnumerator ShowDeathSequence()
     {
+        
         // Disable player controls
         PlayerController playerController = FindFirstObjectByType<PlayerController>();
         if (playerController != null)
@@ -99,6 +101,9 @@ public class DeathScreen : MonoBehaviour
         
         // Wait before showing text
         yield return new WaitForSeconds(textDelayTime);
+        
+        // play sound
+        AudioManager.Instance.PlaySFX("DeathSound");
         
         // Fade in text
         elapsedTime = 0;
