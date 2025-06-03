@@ -5,6 +5,9 @@ using System;
 
 public class EnemySpawner : MonoBehaviour 
 {
+    [Header("End Game")]
+    public EndGameSequenceManager endGameManager;
+    
     [Serializable]
     public class RoundConfiguration
     {
@@ -61,20 +64,15 @@ public class EnemySpawner : MonoBehaviour
             currentEnemies = new HashSet<Enemy>();
 
             bool cambios = true;
-            // Intercalar spawns de diferentes tipos de enemigos
             for (int spawnIndex = 0; cambios; spawnIndex++) {
                 cambios = false;
                 for (int typeIndex = 0; typeIndex < rounds[roundIndex].enemyTypes.Length; typeIndex++) {
-                    // Solo spawna si aún quedan enemigos de este tipo por spawnar
                     if (spawnIndex < rounds[roundIndex].enemyCounts[typeIndex]) {
                         cambios = true;
                         EnemyType enemyType = rounds[roundIndex].enemyTypes[typeIndex];
-                        //Debug.Log("spawneando intervalo " + spawnInterval);
                         yield return new WaitForSeconds(spawnInterval);
-                        //Debug.Log("esperados 5s");
                         while (isPaused) {
                             yield return new WaitForSeconds(1);
-                            //Debug.Log("esperados 1s");
                         }
 
                         Enemy newEnemy = SpawnEnemy(enemyType, spawnIndex);
@@ -83,17 +81,20 @@ public class EnemySpawner : MonoBehaviour
                 }
             }
 
-            // Esperar a que todos los enemigos sean derrotados
             yield return StartCoroutine(WaitForEnemiesDefeated());
-
-            // Esperar entre rondas
             yield return new WaitForSeconds(delayBetweenRounds);
         }
 
         GameObject.FindWithTag("skybox").GetComponent<Skybox>().material = Resources.Load<Material>("Materials/Skybox/skybox dia");
         GameObject.FindWithTag("Luna").SetActive(false);
-    }
 
+        // Iniciar secuencia de final
+        if (endGameManager != null)
+        {
+            endGameManager.StartEndGameSequence();
+        }
+    }
+    
     private Enemy SpawnEnemy(EnemyType enemyType, int enemyId) {
         Vector3 position = generadorPuntos.GenerarPunto();//(spawnPoint != null) ? spawnPoint.position : transform.position;
 

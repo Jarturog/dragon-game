@@ -40,8 +40,29 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start() 
     {
-        InitializeComponents();
-        SetupEvents();
+        if (thirdPersonCamera == null)
+            thirdPersonCamera = FindFirstObjectByType<ThirdPersonCamera>();
+
+        if (playerController == null)
+            playerController = FindFirstObjectByType<PlayerController>();
+
+        if (playerHealthUI == null)
+            playerHealthUI = FindFirstObjectByType<PlayerHealth>();
+        
+        // Button events
+        if (playButton != null)
+            playButton.onClick.AddListener(StartGame);
+        
+        if (quitButton != null)
+            quitButton.onClick.AddListener(QuitGame);
+        
+        // Video events
+        if (videoPlayer != null)
+            videoPlayer.loopPointReached += OnVideoFinished;
+        
+        // Scene events
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        
         SetupInitialState();
     }
 
@@ -58,37 +79,7 @@ public class MainMenuManager : MonoBehaviour
     #endregion
     
     #region Initialization
-    
-    private void InitializeComponents()
-    {
-        // Find missing components
-        if (thirdPersonCamera == null)
-            thirdPersonCamera = FindFirstObjectByType<ThirdPersonCamera>();
 
-        if (playerController == null)
-            playerController = FindFirstObjectByType<PlayerController>();
-
-        if (playerHealthUI == null)
-            playerHealthUI = FindFirstObjectByType<PlayerHealth>();
-    }
-    
-    private void SetupEvents()
-    {
-        // Button events
-        if (playButton != null)
-            playButton.onClick.AddListener(StartGame);
-        
-        if (quitButton != null)
-            quitButton.onClick.AddListener(QuitGame);
-        
-        // Video events
-        if (videoPlayer != null)
-            videoPlayer.loopPointReached += OnVideoFinished;
-        
-        // Scene events
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-    
     private void CleanupEvents()
     {
         // Button events
@@ -209,17 +200,10 @@ public class MainMenuManager : MonoBehaviour
         if (isHoldingEsc && videoPlayer != null && videoPlayer.isPlaying)
         {
             escHoldTimer += Time.deltaTime;
-    
-            if (escHoldTimer >= skipHoldTime)
+
+            if (escHoldTimer >= skipHoldTime && videoPlayer != null && videoPlayer.isPlaying)
             {
-                // Skip video after holding ESC for skipHoldTime seconds
-                if (videoPlayer != null && videoPlayer.isPlaying)
-                {
-                    videoPlayer.Stop();
-                    InitializeGameplay();
-                }
-                isHoldingEsc = false;
-                escHoldTimer = 0f;
+                OnVideoFinished(videoPlayer);
             }
         }
     }
@@ -291,16 +275,24 @@ public class MainMenuManager : MonoBehaviour
     
     private void InitializeGameplay()
     {
+        // Asegurar que el playerHealthUI esté activo y visible
         if (playerHealthUI != null)
-            playerHealthUI.gameObject.SetActive(true);
-        if (playerHealthUI.healthUI != null)
         {
-            playerHealthUI.healthUI.ShowUI();
+            playerHealthUI.gameObject.SetActive(true);
+            if (playerHealthUI.healthUI != null)
+            {
+                playerHealthUI.healthUI.ShowUI();
+            }
         }
-    
+
+        // Configurar cámara y jugador
         SetCameraState(enableMovement: true);
-        SetPlayerState(enabled: true); // ← Esta línea faltaba
+        SetPlayerState(enabled: true);
     
+        // Asegurar que el menú esté oculto y el cursor locked
+        SetUIState(showMenu: false, showCursor: false);
+
+        // Iniciar el spawner de enemigos
         if (enemySpawner != null)
             enemySpawner.StartSpawning();
     }
@@ -320,8 +312,15 @@ public class MainMenuManager : MonoBehaviour
     
     private void OnVideoFinished(VideoPlayer vp)
     {
+        videoPlayer.Stop();
+
+        // Reset all video-related state variables
         isHoldingEsc = false;
         escHoldTimer = 0f;
+    
+        // Ensure we're not in a paused state when video finishes
+        hasBeenPaused = false;
+    
         InitializeGameplay();
     }
     
