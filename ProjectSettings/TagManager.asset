@@ -12,6 +12,7 @@ TagManager:
   - Boss1Enemy
   - Luna
   - skybox
+  - PuertaFinal
   layers:
   - Default
   - TransparentFX
