@@ -13,12 +13,6 @@ public class ThirdPersonCamera: MonoBehaviour {
    public LayerMask collisionLayers; // Capas para detectar colisiones
    public float collisionOffset = 0.5f; // Offset para evitar clipping
 
-   private void Awake() {
-       GameObject secondCameraObject = GameObject.FindGameObjectWithTag("SecondCamera");
-       transform.position = secondCameraObject.transform.position;
-       transform.rotation = secondCameraObject.transform.rotation;
-   }
-
    void Start() {
        
        // Ocultar y bloquear el cursor

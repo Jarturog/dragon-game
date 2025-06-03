@@ -30,6 +30,9 @@ public class PlayerController : MonoBehaviour
     
     private PlayerHealth playerHealth;
     private MainMenuManager menuManager;
+
+    private Animator _animator;
+    private bool _estaCaminandoAnimacion;
     
     void Start() {
         menuManager = FindFirstObjectByType<MainMenuManager>();
@@ -42,6 +45,9 @@ public class PlayerController : MonoBehaviour
             Debug.LogWarning("PlayerHealth component not found. Adding one automatically.");
             playerHealth = gameObject.AddComponent<PlayerHealth>();
         }
+        
+        _animator = GetComponentInChildren<Animator>();
+        _estaCaminandoAnimacion = false;
         
         if (cameraTransform == null)
             cameraTransform = Camera.main.transform;
@@ -106,9 +112,15 @@ public class PlayerController : MonoBehaviour
         right.Normalize();
         
         Vector3 move = right * moveX + forward * moveZ;
+
+        if (move != Vector3.zero) {
+            if (!isRunning && !_estaCaminandoAnimacion) {
+                _animator.SetTrigger("Caminar");
+            }
+            // Aplicar movimiento
+            controller.Move(move * (currentSpeed * Time.deltaTime));
+        }
         
-        // Aplicar movimiento
-        controller.Move(move * (currentSpeed * Time.deltaTime));
         
         // MODIFICACIÓN: Siempre rotar el personaje para dar la espalda a la cámara
         // Obtenemos la dirección de la cámara al jugador en el plano horizontal
@@ -188,6 +200,7 @@ public class PlayerController : MonoBehaviour
     {
         lastAttackTime = Time.time;
         Debug.Log("¡Llamarada de fuego!");
+        _animator.SetTrigger("Atacar 2");
         
         if (fireParticleSystem != null)
         {
@@ -215,5 +228,9 @@ public class PlayerController : MonoBehaviour
         {
             fireParticleSystem.Stop();
         }
+    }
+
+    public void setEstaCaminandoAnimacion(bool b) {
+        _estaCaminandoAnimacion = b;
     }
 }
