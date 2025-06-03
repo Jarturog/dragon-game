@@ -85,9 +85,6 @@ public class EnemySpawner : MonoBehaviour
             yield return new WaitForSeconds(delayBetweenRounds);
         }
 
-        GameObject.FindWithTag("skybox").GetComponent<Skybox>().material = Resources.Load<Material>("Materials/Skybox/skybox dia");
-        GameObject.FindWithTag("Luna").SetActive(false);
-
         // Iniciar secuencia de final
         if (endGameManager != null)
         {
