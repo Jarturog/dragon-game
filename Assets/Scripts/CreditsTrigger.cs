@@ -20,25 +20,26 @@ public class CreditsTrigger : MonoBehaviour
     private CanvasGroup fadeCanvasGroup;
     private GameObject creditsPanel;
     private List<GameObject> creditLines = new List<GameObject>();
-
-    private readonly string[] creditTexts = new string[]
+    
+    private readonly List<KeyValuePair<string, int>> creditEntries = new List<KeyValuePair<string, int>>
     {
-        "MOON'S SHADOW",
-        "The Last Flame",
-        "Informática gráfica 2024-2025",
-        "Juan Arturo Abaurrea Calafell: Encargado del videojuego en Unity",
-        "Antoni Navarro Moreno: Encargado del coliseo",
-        "Laura Rodríguez López: Encargada del dragón protagonista",
-        "Lucas Sabater Margarit: Encargado de los enemigos slime y esqueleto",
-        "Hugo Valls Sabater: Encargado del jefe final enemigo golem"
+        new KeyValuePair<string, int>("MOON'S SHADOW", 36),
+        new KeyValuePair<string, int>("The Last Flame", 36),
+        new KeyValuePair<string, int>("", 16),
+        new KeyValuePair<string, int>("Informática gráfica 2024-2025", 14),
+        new KeyValuePair<string, int>("Juan Arturo Abaurrea Calafell: Encargado del videojuego en Unity", 14),
+        new KeyValuePair<string, int>("Antoni Navarro Moreno: Encargado del coliseo", 14),
+        new KeyValuePair<string, int>("Laura Rodríguez López: Encargada del dragón protagonista", 14),
+        new KeyValuePair<string, int>("Lucas Sabater Margarit: Encargado de los enemigos slime y esqueleto", 14),
+        new KeyValuePair<string, int>("Hugo Valls Sabater: Encargado del jefe final enemigo golem", 14),
+        new KeyValuePair<string, int>("", 16),
+        new KeyValuePair<string, int>("¡Gracias por jugar!", 16)
     };
 
     private void Start()
     {
         playerController = FindFirstObjectByType<PlayerController>();
         cameraController = FindFirstObjectByType<ThirdPersonCamera>();
-        
-        // Remove SetupUI() call from here
     }
 
     private void OnTriggerEnter(Collider other)
@@ -129,16 +130,16 @@ public class CreditsTrigger : MonoBehaviour
         panelRT.offsetMax = Vector2.zero;
         creditsPanel.SetActive(false);
 
-        // Crear líneas de texto
-        for (int i = 0; i < creditTexts.Length; i++)
+        // Crear líneas de texto usando creditEntries
+        for (int i = 0; i < creditEntries.Count; i++)
         {
-            GameObject creditLine = CreateCreditLine(creditTexts[i], i);
+            GameObject creditLine = CreateCreditLine(creditEntries[i].Key, creditEntries[i].Value, i);
             creditLine.SetActive(false);
             creditLines.Add(creditLine);
         }
     }
 
-    private GameObject CreateCreditLine(string text, int index)
+    private GameObject CreateCreditLine(string text, int fontSize, int index)
     {
         GameObject go = new GameObject($"CreditLine_{index}");
         go.transform.SetParent(creditsPanel.transform, false);
@@ -146,10 +147,10 @@ public class CreditsTrigger : MonoBehaviour
         // Texto
         TextMeshProUGUI tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text;
-        tmp.fontSize = 36;
+        tmp.fontSize = fontSize; // Usar el tamaño de fuente específico
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.black;
-        tmp.enableWordWrapping = true;
+        tmp.textWrappingMode = TextWrappingModes.Normal;
         RectTransform rt = go.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(1600, 100);
         rt.anchoredPosition = new Vector2(0, 250 - index * 80);

@@ -141,9 +141,16 @@ public class EndGameSequenceManager : MonoBehaviour
     {
         Debug.Log("Iniciando secuencia de puertas");
 
-        // Guardar posiciones originales de las puertas
-        Vector3 originalDoorPosition = doorObject.transform.position;
+        // Guardar rotación original de la puerta
+        Quaternion originalDoorRotation = doorObject.transform.rotation;
         
+        // Calcular el punto de pivote (base inferior de la puerta)
+        Bounds doorBounds = doorObject.GetComponent<Renderer>().bounds;
+        Vector3 pivotPoint = new Vector3(
+            doorBounds.center.x,
+            doorBounds.min.y, // Parte inferior
+            doorBounds.center.z
+        );
 
         // Calcular posición objetivo de la cámara para las puertas
         Vector3 targetDoorCameraPos = doorCameraTarget.position + cameraOffset;
@@ -155,14 +162,18 @@ public class EndGameSequenceManager : MonoBehaviour
         {
             elapsedTime += Time.deltaTime;
             
-            // Mover puertas
+            // Rotar puerta desde la base
             if (elapsedTime <= doorOpenDuration)
             {
                 float doorProgress = elapsedTime / doorOpenDuration;
                 float smoothDoorProgress = Mathf.SmoothStep(0f, 1f, doorProgress);
 
-                Vector3 targetPos = originalDoorPosition + Vector3.up * doorOpenHeight;
-                doorObject.transform.position = Vector3.Lerp(originalDoorPosition, targetPos, smoothDoorProgress);
+                // Calcular la rotación objetivo (90 grados en X)
+                float targetRotationX = 90f * smoothDoorProgress;
+                
+                // Aplicar rotación desde el punto de pivote
+                doorObject.transform.rotation = originalDoorRotation;
+                doorObject.transform.RotateAround(pivotPoint, doorObject.transform.right, targetRotationX);
             }
 
             // Mover cámara hacia las puertas
@@ -191,4 +202,5 @@ public class EndGameSequenceManager : MonoBehaviour
             yield return new WaitForSeconds(remainingTime);
         }
     }
+    
 }
