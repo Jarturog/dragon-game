@@ -295,6 +295,21 @@ public class MainMenuManager : MonoBehaviour
         // Iniciar el spawner de enemigos
         if (enemySpawner != null)
             enemySpawner.StartSpawning();
+
+        var playerTransform = playerController.transform;
+        
+        thirdPersonCamera.transform.position = new Vector3(
+            playerTransform.position.x,
+            playerTransform.position.y + 7,
+            playerTransform.position.z
+        );
+
+        thirdPersonCamera.transform.rotation = Quaternion.Euler(
+            45f, 
+            playerTransform.eulerAngles.y,
+            playerTransform.eulerAngles.z
+        );
+
     }
     
     private void QuitGame()
