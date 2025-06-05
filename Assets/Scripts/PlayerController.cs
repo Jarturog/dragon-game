@@ -32,7 +32,7 @@ public class PlayerController : MonoBehaviour
     private MainMenuManager menuManager;
 
     private Animator _animator;
-    private bool _estaCaminandoAnimacion;
+    private bool _estaCaminandoAnimacion, _estaCorriendoAnimacion, _estaIdleAnimacion, _estaSaltandoAnimacion;
     
     void Start() {
         menuManager = FindFirstObjectByType<MainMenuManager>();
@@ -48,6 +48,9 @@ public class PlayerController : MonoBehaviour
         
         _animator = GetComponentInChildren<Animator>();
         _estaCaminandoAnimacion = false;
+        _estaCorriendoAnimacion = false;
+        _estaIdleAnimacion = false;
+        _estaSaltandoAnimacion = false;
         
         if (cameraTransform == null)
             cameraTransform = Camera.main.transform;
@@ -120,7 +123,12 @@ public class PlayerController : MonoBehaviour
             // Aplicar movimiento
             controller.Move(move * (currentSpeed * Time.deltaTime));
         }
-        
+        else if (isRunning && !_estaCorriendoAnimacion) {
+            _animator.SetTrigger("Correr");
+        }
+        else if (!isRunning && !_estaIdleAnimacion) {
+            _animator.SetTrigger("Idle");
+        }
         
         // MODIFICACIÓN: Siempre rotar el personaje para dar la espalda a la cámara
         // Obtenemos la dirección de la cámara al jugador en el plano horizontal
@@ -141,6 +149,9 @@ public class PlayerController : MonoBehaviour
             if (playerHealth.UseStamina(playerHealth.jumpStaminaCost))
             {
                 velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
+                if (!_estaSaltandoAnimacion) {
+                    _animator.SetTrigger("Saltar");
+                }
             }
         }
         
@@ -162,6 +173,7 @@ public class PlayerController : MonoBehaviour
             if (playerHealth.UseStamina(playerHealth.attackStaminaCost))
             {
                 SpearAttack();
+                _animator.SetTrigger("Atacar1");
             }
         }
         
@@ -172,6 +184,7 @@ public class PlayerController : MonoBehaviour
             if (playerHealth.UseStamina(playerHealth.attackStaminaCost * 2)) // Fire attack costs more
             {
                 FireAttack();
+                _animator.SetTrigger("Atacar2");
             }
         }
     }
@@ -200,7 +213,6 @@ public class PlayerController : MonoBehaviour
     {
         lastAttackTime = Time.time;
         Debug.Log("¡Llamarada de fuego!");
-        _animator.SetTrigger("Atacar 2");
         
         if (fireParticleSystem != null)
         {
@@ -232,5 +244,17 @@ public class PlayerController : MonoBehaviour
 
     public void setEstaCaminandoAnimacion(bool b) {
         _estaCaminandoAnimacion = b;
+    }
+    
+    public void setEstaCorriendoAnimacion(bool b) {
+        _estaCorriendoAnimacion = b;
+    }
+    
+    public void setEstaIdleAnimacion(bool b) {
+        _estaIdleAnimacion = b;
+    }
+    
+    public void setEstaSaltandoAnimacion(bool b) {
+        _estaSaltandoAnimacion = b;
     }
 }

@@ -3,9 +3,17 @@ using UnityEngine;
 public class NotificarFinAnimacionCaminar : StateMachineBehaviour
 {
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
-    override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-    {
-        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>().setEstaCaminandoAnimacion(true);
+    override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
+        PlayerController player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+        if (stateInfo.IsName("Armature|Caminar") || stateInfo.IsName("Bufanda|Caminar")) {
+            player.setEstaCaminandoAnimacion(true);
+        } else if (stateInfo.IsName("Armature|Correr") || stateInfo.IsName("Bufanda|Correr")) {
+            player.setEstaCorriendoAnimacion(true);
+        } else if (stateInfo.IsName("Armature|Idle") || stateInfo.IsName("Bufanda|Idle")) {
+            player.setEstaIdleAnimacion(true);
+        } else if (stateInfo.IsName("Armature|Saltar") || stateInfo.IsName("Bufanda|Saltar")) {
+            player.setEstaSaltandoAnimacion(false);
+        }
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -17,7 +25,16 @@ public class NotificarFinAnimacionCaminar : StateMachineBehaviour
     // OnStateExit is called when a transition ends and the state machine finishes evaluating this state
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>().setEstaCaminandoAnimacion(false);
+        PlayerController player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+        if (stateInfo.IsName("Armature|Caminar") || stateInfo.IsName("Bufanda|Caminar")) {
+            player.setEstaCaminandoAnimacion(false);
+        } else if (stateInfo.IsName("Armature|Correr") || stateInfo.IsName("Bufanda|Correr")) {
+            player.setEstaCorriendoAnimacion(false);
+        } else if (stateInfo.IsName("Armature|Idle") || stateInfo.IsName("Bufanda|Idle")) {
+            player.setEstaIdleAnimacion(false);
+        } else if (stateInfo.IsName("Armature|Saltar") || stateInfo.IsName("Bufanda|Saltar")) {
+            player.setEstaSaltandoAnimacion(false);
+        }
     }
 
     // OnStateMove is called right after Animator.OnAnimatorMove()

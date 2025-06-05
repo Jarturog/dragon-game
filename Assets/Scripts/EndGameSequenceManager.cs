@@ -12,8 +12,9 @@ public class EndGameSequenceManager : MonoBehaviour
     [Header("Moon Settings")]
     private GameObject moonObject;
     public Transform moonCameraTarget;
-    public float moonSequenceDuration = 3f;
-    public float moonDestructionDelay = 2f; // Tiempo antes de destruir la luna
+    public float moonSequenceDuration = 6f;
+    public float moonDestructionDelay = 1.5f; // Tiempo antes de destruir la luna
+    public GameObject moonDestructionParticlesPrefab; // Add this line
     
     [Header("Camera Settings")]
     public float cameraMoveDuration = 3f;
@@ -124,10 +125,21 @@ public class EndGameSequenceManager : MonoBehaviour
         if (moonObject != null)
         {
             Debug.Log("Destruyendo la luna");
+    
+            // Create moon destruction particle effect
+            CreateMoonDestructionParticles(moonObject.transform.position);
+    
             Destroy(moonObject);
+            AudioManager.Instance.PlaySFX("Explosion");
         }
 
-        GameObject.FindWithTag("skybox").GetComponent<Skybox>().material = Resources.Load<Material>("Materials/Skybox/skybox dia");
+        GameObject skyboxObject = GameObject.FindWithTag("skybox");
+        Skybox skyboxComponent = skyboxObject.GetComponent<Skybox>();
+        skyboxComponent.material = Resources.Load<Material>("Materials/Skybox/skybox dia");
+
+        // Force refresh
+        RenderSettings.skybox = skyboxComponent.material;
+        DynamicGI.UpdateEnvironment();
         
         // Esperar el tiempo restante de la secuencia de luna
         float remainingMoonTime = moonSequenceDuration - moonDestructionDelay;
@@ -158,6 +170,7 @@ public class EndGameSequenceManager : MonoBehaviour
         float elapsedTime = 0f;
         float maxDuration = Mathf.Max(doorOpenDuration, cameraMoveDuration);
 
+        AudioManager.Instance.PlaySFX("FallingNoise");
         while (elapsedTime < maxDuration)
         {
             elapsedTime += Time.deltaTime;
@@ -194,6 +207,8 @@ public class EndGameSequenceManager : MonoBehaviour
 
             yield return null;
         }
+        
+        doorObject.transform.position = new Vector3(43.5f, 3.5f, 0.5f);
 
         // Esperar el tiempo restante si es necesario
         float remainingTime = totalSequenceDuration - maxDuration;
@@ -203,4 +218,180 @@ public class EndGameSequenceManager : MonoBehaviour
         }
     }
     
+    private void CreateMoonDestructionParticles(Vector3 position)
+    {
+        // Create multiple particle systems for different effects
+        
+        // 1. Large debris chunks
+        CreateDebrisParticles(position, "LargeDebris", 50, 10f, 30f, 16f, 30f);
+        
+        // 2. Small debris particles
+        CreateDebrisParticles(position, "SmallDebris", 150, 2f, 10f, 10f, 40f);
+        
+        // 3. Dust cloud
+        CreateDustCloud(position);
+    }
+
+    private void CreateDebrisParticles(Vector3 position, string name, int count, float minSize, float maxSize, float minSpeed, float maxSpeed)
+    {
+        GameObject particleObject = new GameObject($"Moon{name}");
+        particleObject.transform.position = position;
+
+        ParticleSystem particles = particleObject.AddComponent<ParticleSystem>();
+
+        // Get the renderer and create URP-compatible material
+        var renderer = particles.GetComponent<ParticleSystemRenderer>();
+        
+        // Create a URP-compatible material for particles
+        Material particleMaterial = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+        
+        // Try to load your luna texture
+        Material lunaTexture = Resources.Load<Material>("Materials/MaterialParticulaLuna"); // Adjust path as needed
+        if (lunaTexture != null)
+        {
+            particleMaterial = lunaTexture;
+        }
+        
+        // Set material properties for URP
+        particleMaterial.SetFloat("_Surface", 1); // Transparent
+        particleMaterial.SetFloat("_Blend", 0); // Alpha blend
+        particleMaterial.SetFloat("_AlphaClip", 0);
+        particleMaterial.SetFloat("_SrcBlend", 5); // SrcAlpha
+        particleMaterial.SetFloat("_DstBlend", 10); // OneMinusSrcAlpha
+        particleMaterial.SetFloat("_ZWrite", 0);
+        particleMaterial.renderQueue = 3000;
+        
+        renderer.material = particleMaterial;
+        
+        // KEY FIX: Change the rendering mode to make particles rounder
+        renderer.alignment = ParticleSystemRenderSpace.Facing; // Face camera
+        renderer.sortMode = ParticleSystemSortMode.Distance;
+        
+        var main = particles.main;
+        main.startLifetime = 8f;
+        main.startSpeed = new ParticleSystem.MinMaxCurve(minSpeed, maxSpeed);
+        main.startSize = new ParticleSystem.MinMaxCurve(minSize, maxSize);
+        main.startColor = new ParticleSystem.MinMaxGradient(Color.gray, new Color(0.8f, 0.8f, 0.7f));
+        main.maxParticles = count;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.loop = false;
+        
+        // IMPORTANT: Set particle shape to sphere for rounder appearance
+        var shape = particles.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 3f;
+        
+        var emission = particles.emission;
+        emission.rateOverTime = 0;
+        emission.SetBursts(new ParticleSystem.Burst[] {
+            new ParticleSystem.Burst(0.0f, count)
+        });
+        
+        var velocityOverLifetime = particles.velocityOverLifetime;
+        velocityOverLifetime.enabled = true;
+        velocityOverLifetime.radial = new ParticleSystem.MinMaxCurve(5f, 10f);
+        
+        var forceOverLifetime = particles.forceOverLifetime;
+        forceOverLifetime.enabled = true;
+        forceOverLifetime.y = -9.81f;
+        
+        // Add 3D rotation for more natural tumbling
+        var rotationOverLifetime = particles.rotationOverLifetime;
+        rotationOverLifetime.enabled = true;
+        rotationOverLifetime.separateAxes = true;
+        rotationOverLifetime.x = new ParticleSystem.MinMaxCurve(-2f, 2f);
+        rotationOverLifetime.y = new ParticleSystem.MinMaxCurve(-2f, 2f);
+        rotationOverLifetime.z = new ParticleSystem.MinMaxCurve(-3f, 3f);
+        
+        // Add size variation over lifetime for more organic shapes
+        var sizeOverLifetime = particles.sizeOverLifetime;
+        sizeOverLifetime.enabled = true;
+        AnimationCurve sizeCurve = new AnimationCurve();
+        sizeCurve.AddKey(0f, 1f);
+        sizeCurve.AddKey(0.3f, UnityEngine.Random.Range(0.8f, 1.2f));
+        sizeCurve.AddKey(0.7f, UnityEngine.Random.Range(0.9f, 1.1f));
+        sizeCurve.AddKey(1f, 0.95f);
+        sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
+        
+        // Enhanced noise for more organic movement
+        var noise = particles.noise;
+        noise.enabled = true;
+        noise.strength = 0.4f;
+        noise.frequency = 0.3f;
+        noise.octaveCount = 3;
+        noise.scrollSpeed = 0.2f;
+        noise.damping = true;
+        
+        Destroy(particleObject, 8f);
+    }
+
+    private void CreateDustCloud(Vector3 position)
+    {
+        GameObject dustObject = new GameObject("MoonDustCloud");
+        dustObject.transform.position = position;
+        
+        ParticleSystem dust = dustObject.AddComponent<ParticleSystem>();
+        
+        // Get renderer for dust and create URP-compatible material
+        var renderer = dust.GetComponent<ParticleSystemRenderer>();
+        
+        // Create URP-compatible dust material
+        Material dustMaterial = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+        
+        // Set up for soft, transparent dust
+        dustMaterial.SetFloat("_Surface", 1); // Transparent
+        dustMaterial.SetFloat("_Blend", 1); // Additive for soft glow
+        dustMaterial.SetFloat("_SrcBlend", 1); // One
+        dustMaterial.SetFloat("_DstBlend", 1); // One
+        dustMaterial.SetFloat("_ZWrite", 0);
+        dustMaterial.renderQueue = 3000;
+        dustMaterial.color = new Color(0.7f, 0.7f, 0.6f, 0.3f);
+        
+        renderer.material = dustMaterial;
+        
+        // Make dust particles face the camera and be soft
+        renderer.alignment = ParticleSystemRenderSpace.Facing;
+        
+        var main = dust.main;
+        main.startLifetime = 10f;
+        main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 8f);
+        main.startSize = new ParticleSystem.MinMaxCurve(1f, 4f);
+        main.startColor = new Color(0.7f, 0.7f, 0.6f, 0.3f);
+        main.maxParticles = 100;
+        main.loop = false;
+        
+        var emission = dust.emission;
+        emission.rateOverTime = 0;
+        emission.SetBursts(new ParticleSystem.Burst[] {
+            new ParticleSystem.Burst(0.0f, 100)
+        });
+        
+        var shape = dust.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 5f;
+        
+        // Dust expands slowly
+        var velocityOverLifetime = dust.velocityOverLifetime;
+        velocityOverLifetime.enabled = true;
+        velocityOverLifetime.radial = new ParticleSystem.MinMaxCurve(2f, 5f);
+        
+        // Fade out over time
+        var colorOverLifetime = dust.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        Gradient gradient = new Gradient();
+        gradient.SetKeys(
+            new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.gray, 1.0f) },
+            new GradientAlphaKey[] { new GradientAlphaKey(0.8f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
+        );
+        colorOverLifetime.color = gradient;
+        
+        // Add noise to dust for more natural movement
+        var noise = dust.noise;
+        noise.enabled = true;
+        noise.strength = 0.2f;
+        noise.frequency = 0.3f;
+        noise.octaveCount = 1;
+        
+        Destroy(dustObject, 8f);
+    }
 }

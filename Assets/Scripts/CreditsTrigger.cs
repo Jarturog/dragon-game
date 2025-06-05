@@ -97,6 +97,12 @@ public class CreditsTrigger : MonoBehaviour
 
             yield return new WaitForSeconds(timeBetweenCredits);
         }
+        yield return new WaitForSeconds(timeBetweenCredits);
+        
+        // Volver al menú principal en lugar de reiniciar la escena
+        MainMenuManager.ReturnToMainMenu();
+        
+        Destroy(gameObject);
     }
 
     private void SetupUI()
@@ -153,7 +159,7 @@ public class CreditsTrigger : MonoBehaviour
         tmp.textWrappingMode = TextWrappingModes.Normal;
         RectTransform rt = go.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(1600, 100);
-        rt.anchoredPosition = new Vector2(0, 250 - index * 80);
+        rt.anchoredPosition = new Vector2(0, 250 - index * 40);
 
         // Partículas
         GameObject psObj = new GameObject("Particles");

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public abstract class Enemy : MonoBehaviour
@@ -26,7 +27,8 @@ public abstract class Enemy : MonoBehaviour
         Approach,
         Attack,
         Flee,
-        Idle
+        Idle,
+        Dead
     }
     
     protected EnemyState currentState = EnemyState.Idle;
@@ -72,18 +74,22 @@ public abstract class Enemy : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (player == null || rb == null)
+        if (player == null || rb == null || currentState == EnemyState.Dead) {
             return;
+        }
 
         // Determine state based on distance
         UpdateEnemyState();
-        
+    
         // Execute behavior based on current state
         ExecuteCurrentState();
     }
 
     protected virtual void UpdateEnemyState() 
     {
+        if (currentState == EnemyState.Dead)
+            return;
+        
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
     
         // Determine state based on distance
@@ -202,21 +208,28 @@ public abstract class Enemy : MonoBehaviour
 
     public virtual void TakeDamage(float damage)
     {
+        if (currentState == EnemyState.Dead) {
+            return;
+        }
+        
         health -= damage;
         Debug.Log(gameObject.name + " took " + damage + " damage. Remaining health: " + health);
-    
+
         if (_healthBar != null)
         {
             _healthBar.UpdateHealthBar(health, maxHealth);
         }
-    
+
         if (health <= 0)
         {
+            currentState = EnemyState.Dead;  // Set state to dead
             _animator.SetTrigger("Morir");
         }
     }
 
-    public void FinAnimacionMorir() {
+    public IEnumerator DestroyAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
         Debug.Log(gameObject.name + " has been defeated!");
         Destroy(gameObject);
     }

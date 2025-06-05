@@ -37,16 +37,15 @@ public class SlimeEnemy : Enemy
                 if (distanceToPlayer > 2f && !_isJumping && Time.time > _lastJumpTime + jumpCooldown)
                 {
                     Jump();
-                }
-                else if (!_isJumping)
-                {
                     MoveTowardsTarget(player.position);
+                    AudioManager.Instance.PlaySFX("SlimeImpact");
                 }
                 break;
                 
             case EnemyState.Attack:
                 StopMoving();
                 TryAttack();
+                AudioManager.Instance.PlaySFX("SlimeImpact");
                 break;
                 
             default:
@@ -62,7 +61,7 @@ public class SlimeEnemy : Enemy
     {
         Debug.Log(gameObject.name + " is jumping!");
         
-        _animator.SetTrigger("Moverse");
+        _animator.SetTrigger("Saltar");
         
         // Calculate jump direction towards player
         Vector3 jumpDirection = (player.position - transform.position).normalized;

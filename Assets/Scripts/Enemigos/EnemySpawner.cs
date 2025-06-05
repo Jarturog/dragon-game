@@ -105,7 +105,7 @@ public class EnemySpawner : MonoBehaviour
                 gbToInstantiate = MageEnemy.gameObjectToInstantiate;
                 break;
             case EnemyType.Boss1Enemy:
-                gbToInstantiate = Boss1Enemy.gameObjectToInstantiate;
+                gbToInstantiate = BossEnemy.gameObjectToInstantiate;
                 break;
         }
         
