@@ -15,17 +15,24 @@ public class MageProjectile : Enemy
     
     public void Initialize(Vector3 direction, float speed, float lifetime, float damage)
     {
+        // Override certain enemy behaviors for projectile
+        moveForce = 0f; // Don't use force-based movement
+        maxSpeed = speed;
         _direction = direction;
         _speed = speed;
         _destroyTime = Time.time + lifetime;
         attackDamage = damage;
         player = GameObject.FindGameObjectWithTag("Player").transform;
-        Rigidbody rb = gameObject.AddComponent<Rigidbody>();
-        rb.mass /= 10;
+        // Add rigidbody for collision detection only
+        Rigidbody rb = gameObject.GetComponent<Rigidbody>();
+        if (rb == null) {
+            rb = gameObject.AddComponent<Rigidbody>();
+        }
+        
         rb.useGravity = false;
-
-        // Set initial rotation to face direction
-        transform.rotation = Quaternion.LookRotation(_direction);
+        rb.isKinematic = true; // Prevents physics interference
+        
+        transform.rotation = Quaternion.LookRotation(direction);
     }
     
     protected new void Start()
@@ -35,6 +42,14 @@ public class MageProjectile : Enemy
         // Override certain enemy behaviors for projectile
         moveForce = 0f; // Don't use force-based movement
         maxSpeed = _speed;
+        
+        Rigidbody rb = gameObject.GetComponent<Rigidbody>();
+        if (rb == null) {
+            rb = gameObject.AddComponent<Rigidbody>();
+        }
+        
+        rb.useGravity = false;
+        rb.isKinematic = true; // Prevents physics interference
     }
     
     protected void FixedUpdate()
@@ -74,14 +89,16 @@ public class MageProjectile : Enemy
                 playerHealth.TakeDamage(attackDamage);
                 Debug.Log("Projectile hit player for " + attackDamage + " damage!");
             }
-            
-            // Destroy projectile on hit
-            Destroy(gameObject);
         }
-        else if (!other.tag.EndsWith("Enemy", StringComparison.InvariantCultureIgnoreCase) && !other.CompareTag("Projectile"))
+        else if (other.tag.EndsWith("Enemy", StringComparison.InvariantCultureIgnoreCase))
         {
-            // Hit something else (like a wall) - destroy projectile
-            Destroy(gameObject);
+            other.GetComponent<Enemy>().TakeDamage(attackDamage);
+            Debug.Log("Projectile hit enemy for " + attackDamage + " damage!");
+        } else if (other.CompareTag("Projectile"))
+        {
+            Debug.Log("Projectile hit projectile!");
         }
+        Destroy(gameObject);
+        Debug.Log("Projectile hit something!");
     }
 }

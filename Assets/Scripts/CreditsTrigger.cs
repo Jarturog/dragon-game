@@ -63,6 +63,10 @@ public class CreditsTrigger : MonoBehaviour
 
         if (cameraController != null)
             cameraController.enabled = false;
+        
+        var menu = FindFirstObjectByType<MainMenuManager>();
+        if (menu != null)
+            menu.enabled = false;
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;

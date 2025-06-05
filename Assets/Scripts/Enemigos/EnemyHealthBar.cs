@@ -5,8 +5,12 @@ public class EnemyHealthBar : MonoBehaviour
 {
     private Canvas canvas;
     private Image healthFill;
-    private RectTransform fillRect; // Referencia al RectTransform de la barra
-
+    private RectTransform fillRect;
+    
+    [Header("Health Bar Settings")]
+    public float heightOffset = 0.5f; // Additional offset above the enemy
+    public bool useRendererBounds = true; // Use renderer bounds vs collider bounds
+    
     public void Initialize()
     {
         // Create canvas
@@ -14,28 +18,75 @@ public class EnemyHealthBar : MonoBehaviour
         canvas = canvasObj.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         
-        // Configurar canvas como hijo del enemigo
+        // Configure canvas as child of enemy
         canvasObj.transform.SetParent(transform, false);
-        canvasObj.transform.localPosition = new Vector3(0, 2, 0);
+        
+        // Calculate dynamic position based on enemy height
+        Vector3 healthBarPosition = CalculateHealthBarPosition();
+        canvasObj.transform.localPosition = healthBarPosition;
         canvasObj.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
         
-        // Crear barra de vida directamente en el canvas
+        // Create health bar directly in canvas
         GameObject fillObj = new GameObject("HealthFill");
         fillObj.transform.SetParent(canvas.transform, false);
         
-        // Configurar RectTransform
+        // Configure RectTransform
         fillRect = fillObj.AddComponent<RectTransform>();
-        fillRect.sizeDelta = new Vector2(100, 10); // Ancho inicial completo
-        fillRect.pivot = new Vector2(0.5f, 0.5f); // Pivote en el extremo derecho
+        fillRect.sizeDelta = new Vector2(100, 10);
+        fillRect.pivot = new Vector2(0.5f, 0.5f);
         fillRect.anchorMin = new Vector2(0.5f, 0.5f);
         fillRect.anchorMax = new Vector2(0.5f, 0.5f);
-        fillRect.anchoredPosition = Vector2.zero; // Centrado en el canvas
+        fillRect.anchoredPosition = Vector2.zero;
         
-        // Configurar imagen de la barra
+        // Configure health bar image
         healthFill = fillObj.AddComponent<Image>();
         healthFill.color = Color.green;
+    }
+    
+    private Vector3 CalculateHealthBarPosition()
+    {
+        float enemyHeight = GetEnemyHeight();
+        return new Vector3(0, enemyHeight + heightOffset, 0);
+    }
+    
+    private float GetEnemyHeight()
+    {
+        float height = 2f; // Default fallback height
         
+        if (useRendererBounds)
+        {
+            // Method 1: Use Renderer bounds (most accurate for visual representation)
+            Renderer renderer = GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                height = renderer.bounds.size.y;
+            }
+            else
+            {
+                // Fallback to checking child renderers
+                Renderer[] childRenderers = GetComponentsInChildren<Renderer>();
+                if (childRenderers.Length > 0)
+                {
+                    Bounds combinedBounds = childRenderers[0].bounds;
+                    foreach (Renderer r in childRenderers)
+                    {
+                        combinedBounds.Encapsulate(r.bounds);
+                    }
+                    height = combinedBounds.size.y;
+                }
+            }
+        }
+        else
+        {
+            // Method 2: Use Collider bounds
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+            {
+                height = col.bounds.size.y;
+            }
+        }
         
+        return height;
     }
     
     public void UpdateHealthBar(float currentHealth, float maxHealth)
@@ -44,17 +95,17 @@ public class EnemyHealthBar : MonoBehaviour
         {
             float healthPercent = currentHealth / maxHealth;
             
-            // Reducir la anchura del RectTransform
+            // Reduce RectTransform width
             fillRect.sizeDelta = new Vector2(100 * healthPercent, 10);
             
-            // Cambiar color gradualmente
+            // Change color gradually
             healthFill.color = Color.Lerp(Color.red, Color.green, healthPercent);
         }
     }
     
     void Update()
     {
-        // Rotar el canvas para mirar a la cámara
+        // Rotate canvas to look at camera
         if (canvas != null && Camera.main != null)
         {
             canvas.transform.rotation = Camera.main.transform.rotation;

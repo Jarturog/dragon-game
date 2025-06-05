@@ -62,6 +62,8 @@ public class EndGameSequenceManager : MonoBehaviour
         // 2. Deshabilitar control del jugador y cámara original
         playerController.enabled = false;
         originalCamera.enabled = false;
+        var menu = FindFirstObjectByType<MainMenuManager>();
+        menu.enabled = false;
 
         // 3. Ejecutar secuencia completa (luna + puertas + cámara)
         yield return StartCoroutine(MoonAndDoorSequence());
@@ -69,6 +71,7 @@ public class EndGameSequenceManager : MonoBehaviour
         // 4. Restaurar control
         playerController.enabled = true;
         originalCamera.enabled = true;
+        menu.enabled = true;
 
         Debug.Log("Secuencia de final completada");
         sequenceActive = false;

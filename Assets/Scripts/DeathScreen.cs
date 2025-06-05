@@ -83,10 +83,9 @@ public class DeathScreen : MonoBehaviour
         
         // Disable player controls
         PlayerController playerController = FindFirstObjectByType<PlayerController>();
-        if (playerController != null)
-        {
-            playerController.enabled = false;
-        }
+        playerController.enabled = false; 
+        var menu = FindFirstObjectByType<MainMenuManager>();
+        menu.enabled = false;
         
         // Fade in background
         float elapsedTime = 0;

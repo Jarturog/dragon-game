@@ -34,6 +34,7 @@ public abstract class Enemy : MonoBehaviour
     protected EnemyState currentState = EnemyState.Idle;
 
     protected Animator _animator;
+    protected bool _estaCaminandoAnimacion, _estaAtacandoAnimacion;
 
     protected void Start() {
         gameObject.SetActive(true);
@@ -57,10 +58,6 @@ public abstract class Enemy : MonoBehaviour
             rb.isKinematic = false;
             // Add drag for more natural movement
             rb.linearDamping = 1f;
-        }
-        else
-        {
-            Debug.LogError("Rigidbody component missing from enemy!");
         }
         
         _animator = GetComponentInChildren<Animator>();
@@ -147,7 +144,7 @@ public abstract class Enemy : MonoBehaviour
         }
     }
     
-    protected void MoveTowardsTarget(Vector3 targetPosition)
+    protected virtual void MoveTowardsTarget(Vector3 targetPosition)
     {
         // Calculate movement direction (horizontal only)
         Vector3 direction = targetPosition - transform.position;
@@ -196,7 +193,7 @@ public abstract class Enemy : MonoBehaviour
     protected virtual void AttackPlayer()
     {
         Debug.Log(gameObject.name + " attacks player for " + attackDamage + " damage!");
-    
+        
         _animator.SetTrigger("Atacar");
         
         // Get the PlayerHealth component and apply damage
@@ -233,5 +230,14 @@ public abstract class Enemy : MonoBehaviour
         yield return new WaitForSeconds(delay);
         Debug.Log(gameObject.name + " has been defeated!");
         Destroy(gameObject);
+    }
+
+    public void setEstaCaminandoAnimacion(bool b) {
+        _estaCaminandoAnimacion = b;
+        Debug.Log("Enemigo está caminando: " + b);
+    }
+
+    public void setEstaAtacandoAnimacion(bool b) {
+        _estaAtacandoAnimacion = b;
     }
 }

@@ -33,8 +33,12 @@ public class PlayerController : MonoBehaviour
 
     private Animator _animator;
     private bool _estaCaminandoAnimacion, _estaCorriendoAnimacion, _estaIdleAnimacion, _estaSaltandoAnimacion;
+    private float lastMovementTime;
+    private float idleDelay = 5f;
     
     void Start() {
+        lastMovementTime = Time.time;
+        
         menuManager = FindFirstObjectByType<MainMenuManager>();
         
         controller = GetComponent<CharacterController>();
@@ -115,18 +119,28 @@ public class PlayerController : MonoBehaviour
         right.Normalize();
         
         Vector3 move = right * moveX + forward * moveZ;
+        bool isMoving = move != Vector3.zero;
 
-        if (move != Vector3.zero) {
-            if (!isRunning && !_estaCaminandoAnimacion) {
+        if (isMoving) 
+        {
+            // Update last movement time
+            lastMovementTime = Time.time;
+    
+            // Apply movement
+            controller.Move(move * (currentSpeed * Time.deltaTime));
+    
+            // Handle movement animations
+            if (isRunning && !_estaCorriendoAnimacion) 
+            {
+                _animator.SetTrigger("Correr");
+            }
+            else if (!isRunning && !_estaCaminandoAnimacion) 
+            {
                 _animator.SetTrigger("Caminar");
             }
-            // Aplicar movimiento
-            controller.Move(move * (currentSpeed * Time.deltaTime));
         }
-        else if (isRunning && !_estaCorriendoAnimacion) {
-            _animator.SetTrigger("Correr");
-        }
-        else if (!isRunning && !_estaIdleAnimacion) {
+        else if (Time.time - lastMovementTime >= idleDelay && !_estaIdleAnimacion) 
+        {
             _animator.SetTrigger("Idle");
         }
         
