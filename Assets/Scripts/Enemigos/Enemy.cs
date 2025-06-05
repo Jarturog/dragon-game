@@ -143,6 +143,7 @@ public abstract class Enemy : MonoBehaviour
         {
             AttackPlayer();
             _lastAttackTime = Time.time;
+            AudioManager.Instance.PlaySFX("SlimeImpact");
         }
     }
     

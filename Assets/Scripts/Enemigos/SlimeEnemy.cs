@@ -45,7 +45,6 @@ public class SlimeEnemy : Enemy
             case EnemyState.Attack:
                 StopMoving();
                 TryAttack();
-                AudioManager.Instance.PlaySFX("SlimeImpact");
                 break;
                 
             default:
