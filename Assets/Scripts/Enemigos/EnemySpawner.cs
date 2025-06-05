@@ -8,6 +8,12 @@ public class EnemySpawner : MonoBehaviour
     [Header("End Game")]
     public EndGameSequenceManager endGameManager;
     
+    [Header("Boss Animation")]
+    private Transform bossOnStage;
+    public float bossJumpDuration = 2f;
+    public float bossAnimationCameraDuration = 3f;
+    public Vector3 bossCameraOffset = new Vector3(0, 3f, -8f);
+    
     [Serializable]
     public class RoundConfiguration
     {
@@ -42,58 +48,254 @@ public class EnemySpawner : MonoBehaviour
     public float spawnInterval = 1.0f;
     public Transform spawnPoint;
     public float delayBetweenRounds = 3f;
+    public float radius = 60f;          
+    public float minDistance = 1f;     
+    public const float minDistancePuntosEvitados = 15f;     
 
-    private HashSet<Enemy> currentEnemies;
+    // Store all enemies organized by rounds
+    private List<List<Enemy>> allRoundEnemies;
+    private HashSet<Enemy> currentActiveEnemies;
     private int currentRound = 0;
     private bool isPaused = false;
     private CirclePointGenerator generadorPuntos;
+    
+    // Referencias para la animación de la cámara
+    private ThirdPersonCamera originalCamera;
+    private PlayerController playerController;
+    private Camera mainCamera;
 
     private void Start() {
-        generadorPuntos = new CirclePointGenerator(transform.position);
+        bossOnStage = GameObject.FindWithTag("PuntoJefe").transform;
+            
+        generadorPuntos = new CirclePointGenerator(transform.position, radius, minDistance);
+        
+        // Obtener referencias para la animación de cámara
+        originalCamera = FindFirstObjectByType<ThirdPersonCamera>();
+        playerController = FindFirstObjectByType<PlayerController>();
+        mainCamera = Camera.main;
+        
+        // Spawn all enemies at the beginning
+        SpawnAllEnemies();
+    }
+
+    private void SpawnAllEnemies()
+    {
+        allRoundEnemies = new List<List<Enemy>>();
+        
+        for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++)
+        {
+            List<Enemy> roundEnemies = new List<Enemy>();
+            
+            // Spawn all enemies for this round
+            int enemyId = 0;
+            for (int typeIndex = 0; typeIndex < rounds[roundIndex].enemyTypes.Length; typeIndex++)
+            {
+                EnemyType enemyType = rounds[roundIndex].enemyTypes[typeIndex];
+                int count = rounds[roundIndex].enemyCounts[typeIndex];
+                
+                for (int i = 0; i < count; i++)
+                {
+                    Enemy newEnemy = SpawnEnemy(enemyType, enemyId, roundIndex);
+                    roundEnemies.Add(newEnemy);
+                    
+                    // Disable the enemy script initially
+                    newEnemy.enabled = false;
+                    
+                    enemyId++;
+                }
+            }
+            
+            allRoundEnemies.Add(roundEnemies);
+        }
+        
+        Debug.Log($"Pre-spawned {allRoundEnemies.Count} rounds of enemies");
     }
 
     public void StartSpawning()
     {
-        StartCoroutine(SpawnRounds());
+        StartCoroutine(ActivateRounds());
     }
 
-    private IEnumerator SpawnRounds()
+    private IEnumerator ActivateRounds()
     {
-        for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++) {
+        for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++)
+        {
             currentRound = roundIndex;
-            currentEnemies = new HashSet<Enemy>();
+            currentActiveEnemies = new HashSet<Enemy>();
 
-            bool cambios = true;
-            for (int spawnIndex = 0; cambios; spawnIndex++) {
-                cambios = false;
-                for (int typeIndex = 0; typeIndex < rounds[roundIndex].enemyTypes.Length; typeIndex++) {
-                    if (spawnIndex < rounds[roundIndex].enemyCounts[typeIndex]) {
-                        cambios = true;
-                        EnemyType enemyType = rounds[roundIndex].enemyTypes[typeIndex];
-                        yield return new WaitForSeconds(spawnInterval);
-                        while (isPaused) {
-                            yield return new WaitForSeconds(1);
-                        }
-
-                        Enemy newEnemy = SpawnEnemy(enemyType, spawnIndex);
-                        currentEnemies.Add(newEnemy);
-                    }
-                }
+            // Check if we need boss animation before the last round
+            bool isLastRound = (roundIndex == rounds.Length - 1);
+            bool isLastRoundBossOnly = IsLastRoundBossOnly();
+            
+            if (isLastRound && isLastRoundBossOnly)
+            {
+                // Execute boss jumping animation
+                yield return StartCoroutine(BossJumpAnimation());
             }
 
+            // Activate enemies for this round with intervals
+            List<Enemy> roundEnemies = allRoundEnemies[roundIndex];
+            
+            for (int i = 0; i < roundEnemies.Count; i++)
+            {
+                Enemy enemy = roundEnemies[i];
+                
+                // Wait for spawn interval
+                if (i > 0) // Don't wait before the first enemy
+                {
+                    yield return new WaitForSeconds(spawnInterval);
+                }
+                
+                // Wait if paused
+                while (isPaused)
+                {
+                    yield return new WaitForSeconds(0.1f);
+                }
+
+                // Activate the enemy
+                enemy.gameObject.SetActive(true);
+                enemy.enabled = true;
+                enemy.gameObject.GetComponent<Rigidbody>().freezeRotation = false;
+                currentActiveEnemies.Add(enemy);
+                
+                Debug.Log($"Activated enemy: {enemy.name}");
+            }
+
+            // Wait for all enemies in this round to be defeated
             yield return StartCoroutine(WaitForEnemiesDefeated());
-            yield return new WaitForSeconds(delayBetweenRounds);
+            
+            // No delay after the last round
+            if (roundIndex < rounds.Length - 1)
+            {
+                yield return new WaitForSeconds(delayBetweenRounds);
+            }
         }
 
-        // Iniciar secuencia de final
+        // Start end game sequence
         if (endGameManager != null)
         {
             endGameManager.StartEndGameSequence();
         }
     }
     
-    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId) {
-        Vector3 position = generadorPuntos.GenerarPunto();//(spawnPoint != null) ? spawnPoint.position : transform.position;
+    private bool IsLastRoundBossOnly()
+    {
+        int lastRoundIndex = rounds.Length - 1;
+        if (lastRoundIndex < 0) return false;
+        
+        RoundConfiguration lastRound = rounds[lastRoundIndex];
+        
+        if (lastRound.enemyTypes.Length != 1) return false;
+        
+        return lastRound.enemyTypes[0] == EnemyType.Boss1Enemy && 
+               lastRound.enemyCounts[0] == 1;
+    }
+    
+    private IEnumerator BossJumpAnimation()
+    {
+        // Find the boss enemy that was pre-spawned for this round
+        List<Enemy> lastRoundEnemies = allRoundEnemies[allRoundEnemies.Count - 1];
+        Enemy bossEnemy = lastRoundEnemies.Find(e => e.name.Contains("Boss1Enemy"));
+        
+        if (bossEnemy != null && bossOnStage != null)
+        {
+            // Move the boss to the stage position for the animation
+            bossEnemy.transform.position = bossOnStage.position;
+            bossOnStage = bossEnemy.transform; // Update reference
+        }
+
+        Debug.Log("Iniciando animación del jefe saltando del palco");
+
+        // Save original camera state and controls
+        Vector3 originalCameraPos = mainCamera.transform.position;
+        
+        // Disable player controls and original camera
+        playerController.enabled = false;
+        originalCamera.enabled = false;
+
+        // Hide health UI if it exists
+        PlayerHealth playerHealth = playerController.GetComponent<PlayerHealth>();
+        if (playerHealth != null)
+        {
+            playerHealth.healthUI.HideUI();
+        }
+        
+        var menu = FindFirstObjectByType<MainMenuManager>();
+        menu.enabled = false;
+
+        Vector3 bossStartPos = bossOnStage.position;
+        Vector3 bossEndPos = bossStartPos + (spawnPoint.position - bossStartPos).normalized * 2f;
+        bossEndPos.y = 0;
+
+        Vector3 targetCameraPos = bossStartPos + bossCameraOffset;
+        
+        float elapsedTime = 0f;
+        float maxDuration = Mathf.Max(bossAnimationCameraDuration, bossJumpDuration);
+
+        while (elapsedTime < maxDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            
+            // Animate camera
+            if (elapsedTime <= bossAnimationCameraDuration)
+            {
+                float cameraProgress = elapsedTime / bossAnimationCameraDuration;
+                float smoothCameraProgress = Mathf.SmoothStep(0f, 1f, cameraProgress);
+
+                Vector3 newCameraPos = Vector3.Lerp(originalCameraPos, targetCameraPos, smoothCameraProgress);
+                mainCamera.transform.position = newCameraPos;
+                
+                mainCamera.transform.LookAt(bossOnStage.position);
+            }
+            
+            // Animate boss jump
+            if (elapsedTime <= bossJumpDuration)
+            {
+                float jumpProgress = elapsedTime / bossJumpDuration;
+                float smoothJumpProgress = Mathf.SmoothStep(0f, 1f, jumpProgress);
+                
+                Vector3 currentPos = Vector3.Lerp(bossStartPos, bossEndPos, smoothJumpProgress);
+                
+                float jumpHeight = 10f;
+                float heightOffset = jumpHeight * Mathf.Sin(jumpProgress * Mathf.PI);
+                currentPos.y += heightOffset;
+                
+                bossOnStage.position = currentPos;
+            }
+
+            yield return null;
+        }
+
+        // Ensure boss is at final position
+        bossOnStage.position = bossEndPos;
+
+        // Restore controls and camera
+        playerController.enabled = true;
+        originalCamera.enabled = true;
+        
+        if (playerHealth != null)
+        {
+            playerHealth.healthUI.ShowUI();
+        }
+        
+        menu.enabled = true;
+
+        Debug.Log("Animación del jefe completada");
+    }
+    
+    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId, int roundIndex) 
+    {
+        Vector3 position;
+    
+        // Special positioning for boss enemy
+        if (enemyType == EnemyType.Boss1Enemy)
+        {
+            position = bossOnStage.position;
+        }
+        else
+        {
+            position = generadorPuntos.GenerarPunto();
+        }
 
         GameObject gbToInstantiate = null;
         switch (enemyType)
@@ -108,38 +310,41 @@ public class EnemySpawner : MonoBehaviour
                 gbToInstantiate = BossEnemy.gameObjectToInstantiate;
                 break;
         }
-        
+    
         GameObject enemyObject = Instantiate(gbToInstantiate, position, Quaternion.identity);
-        enemyObject.name = $"{enemyType}_" + enemyId;
+        enemyObject.name = $"Round{roundIndex}_{enemyType}_{enemyId}";
+    
+        Vector3 directionToSpawn = (spawnPoint.position - position).normalized;
+        enemyObject.transform.rotation = Quaternion.LookRotation(directionToSpawn);
 
         Rigidbody rb = enemyObject.AddComponent<Rigidbody>();
         rb.isKinematic = false;
+        rb.freezeRotation = true;
 
         Enemy enemyScript = enemyObject.GetComponent<Enemy>();
-        enemyScript.enabled = true;
-        
-        Debug.Log($"Enemy created: {enemyObject.name}");
+    
+        Debug.Log($"Pre-spawned enemy: {enemyObject.name}");
         return enemyScript;
     }
-
+    
     private IEnumerator WaitForEnemiesDefeated()
     {
-        while (currentEnemies.Count > 0)
+        while (currentActiveEnemies.Count > 0)
         {
             // Remove any null enemies (defeated)
-            currentEnemies.RemoveWhere(enemy => enemy == null);
+            currentActiveEnemies.RemoveWhere(enemy => enemy == null);
             yield return null;
         }
     }
 
     public void PauseAllEnemies(bool pauseEnemies)
     {
-        if (currentEnemies == null) {
+        if (currentActiveEnemies == null) {
             return;
         }
         
         isPaused = pauseEnemies;
-        foreach (var enemy in currentEnemies)
+        foreach (var enemy in currentActiveEnemies)
         {
             if (enemy != null)
             {
@@ -154,28 +359,26 @@ public class EnemySpawner : MonoBehaviour
         }
     }
     
-    public class CirclePointGenerator
+    // CirclePointGenerator class remains the same...
+    private class CirclePointGenerator
     {
-        public float radius = 20f;          // Radio del círculo
-        public float minDistance = 1f;     // Distancia mínima entre puntos
 
-        private Vector3 center;            // Centro del círculo
-        private HashSet<Vector3> puntos;   // Conjunto de puntos generados
+        private float radius;          
+        private float minDistance;
+        
+        private Vector3 center;            
+        private HashSet<Vector3> puntos;
+        private HashSet<Vector3> puntosEvitados;
 
-        public CirclePointGenerator(Vector3 centro) 
-        {
+        public CirclePointGenerator(Vector3 centro, float radius, float minDistance) {
+            this.radius = radius;
+            this.minDistance = minDistance;
+            GameObject[] puntosEvitadosArray = GameObject.FindGameObjectsWithTag("PuntoEvitado");
             puntos = new HashSet<Vector3>();
-            puntos.Add(new Vector3(25, 10, -5));
-            puntos.Add(new Vector3(25, 10, -4));
-            puntos.Add(new Vector3(25, 10, -3));
-            puntos.Add(new Vector3(25, 10, -2));
-            puntos.Add(new Vector3(25, 10, -1));
-            puntos.Add(new Vector3(25, 10, 0));
-            puntos.Add(new Vector3(25, 10, 1));
-            puntos.Add(new Vector3(25, 10, 2));
-            puntos.Add(new Vector3(25, 10, 3));
-            puntos.Add(new Vector3(25, 10, 4));
-            puntos.Add(new Vector3(25, 10, 5));
+            puntosEvitados = new HashSet<Vector3>();
+            foreach (GameObject punto in puntosEvitadosArray) {
+                puntosEvitados.Add(punto.transform.position);
+            }
             this.center = centro;
         }
 
@@ -183,32 +386,39 @@ public class EnemySpawner : MonoBehaviour
         {
             Vector3 newPoint = center;
             bool hayColision = true;
-            int maxIntentos = 100; // Previene bucles infinitos
+            int maxIntentos = 100; 
             int intentos = 0;
             
             while (hayColision && intentos < maxIntentos) 
             {
-                // Genera un ángulo aleatorio
                 float angle = UnityEngine.Random.Range(0f, 2f * Mathf.PI);
-                
-                // Calcula un punto en la circunferencia (horizontalmente, en plano XZ)
                 newPoint = center + new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * radius;
 
                 hayColision = false;
-                foreach (var p in puntos) 
+                
+                foreach (var p in puntosEvitados) 
                 {
-                    if (Vector3.Distance(newPoint, p) <= minDistance) 
+                    if (Vector3.Distance(newPoint, p) <= minDistancePuntosEvitados) 
                     {
                         hayColision = true;
                         break;
                     }
                 }
+
+                if (!hayColision) {
+                    foreach (var p in puntos) 
+                    {
+                        if (Vector3.Distance(newPoint, p) <= minDistance) 
+                        {
+                            hayColision = true;
+                            break;
+                        }
+                    }
+                }
                 
                 intentos++;
-
             }
             
-            // Si no pudimos encontrar un punto después de muchos intentos
             if (intentos >= maxIntentos) 
             {
                 Debug.LogWarning("No se pudo encontrar un punto válido después de " + maxIntentos + " intentos");
@@ -220,5 +430,4 @@ public class EnemySpawner : MonoBehaviour
             return newPoint;
         }
     }
-    
 }
