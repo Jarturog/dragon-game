@@ -5,8 +5,8 @@ using Random = UnityEngine.Random;
 public class MageEnemy : Enemy
 {
     public static GameObject gameObjectToInstantiate;
-    protected override float AttackDistance => 10f;
-    protected override float FleeDistance => 4f;
+    protected override float AttackDistance => 15f;
+    protected override float FleeDistance => 7.5f;
     
     [Header("Projectile Settings")]
     public GameObject projectilePrefab;

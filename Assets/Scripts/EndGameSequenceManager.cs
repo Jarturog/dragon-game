@@ -79,6 +79,8 @@ public class EndGameSequenceManager : MonoBehaviour
 
     private IEnumerator MoonAndDoorSequence()
     {
+        AudioManager.Instance.StopMusic();
+        
         // Guardar posición original de la cámara
         Vector3 originalCameraPos = mainCamera.transform.position;
         Quaternion originalCameraRot = mainCamera.transform.rotation;

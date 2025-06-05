@@ -47,11 +47,18 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    public void PlayMusic(AudioClip music)
+    public void PlayMusic(string music)
     {
-        musicSource.clip = music;
-        musicSource.loop = true;
-        musicSource.Play();
+        if (sfxClips.TryGetValue(music, out AudioClip clip))
+        {
+            musicSource.clip = clip;
+            musicSource.loop = true;
+            musicSource.Play();
+        }
+        else
+        {
+            Debug.LogWarning($"Music {music} not found in AudioManager.");
+        }
     }
 
     public void StopMusic()

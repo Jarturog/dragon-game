@@ -80,6 +80,7 @@ public class DeathScreen : MonoBehaviour
     
     private IEnumerator ShowDeathSequence()
     {
+        AudioManager.Instance.StopMusic();
         
         // Disable player controls
         PlayerController playerController = FindFirstObjectByType<PlayerController>();

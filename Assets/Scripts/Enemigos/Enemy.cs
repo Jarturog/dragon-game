@@ -36,7 +36,7 @@ public abstract class Enemy : MonoBehaviour
     protected Animator _animator;
     protected bool _estaCaminandoAnimacion, _estaAtacandoAnimacion;
 
-    protected void Start() {
+    protected virtual void Start() {
         gameObject.SetActive(true);
         if (player == null)
         {
@@ -106,6 +106,9 @@ public abstract class Enemy : MonoBehaviour
     
     protected virtual void ExecuteCurrentState()
     {
+        if (player == null) {
+            player = GameObject.FindWithTag("Player").transform;
+        }
         FacePlayer();
         
         switch (currentState)

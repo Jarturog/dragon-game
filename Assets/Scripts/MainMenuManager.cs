@@ -309,6 +309,8 @@ public class MainMenuManager : MonoBehaviour
             playerTransform.eulerAngles.y,
             playerTransform.eulerAngles.z
         );
+        AudioManager.Instance.PlaySFX("a");
+        AudioManager.Instance.PlayMusic("Soul Of Cinder");
 
     }
     
