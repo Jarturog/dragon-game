@@ -27,11 +27,11 @@ public class CreditsTrigger : MonoBehaviour
         new KeyValuePair<string, int>("The Last Flame", 36),
         new KeyValuePair<string, int>("", 16),
         new KeyValuePair<string, int>("Informática gráfica 2024-2025", 14),
-        new KeyValuePair<string, int>("Juan Arturo Abaurrea Calafell: Encargado del videojuego en Unity", 14),
-        new KeyValuePair<string, int>("Antoni Navarro Moreno: Encargado del coliseo", 14),
-        new KeyValuePair<string, int>("Laura Rodríguez López: Encargada del dragón protagonista", 14),
-        new KeyValuePair<string, int>("Lucas Sabater Margarit: Encargado de los enemigos slime y esqueleto", 14),
-        new KeyValuePair<string, int>("Hugo Valls Sabater: Encargado del jefe final enemigo golem", 14),
+        new KeyValuePair<string, int>("Juan Arturo Abaurrea Calafell: Unity", 14),
+        new KeyValuePair<string, int>("Antoni Navarro Moreno: coliseo", 14),
+        new KeyValuePair<string, int>("Laura Rodríguez López: dragón", 14),
+        new KeyValuePair<string, int>("Lucas Sabater Margarit: slime y esqueleto", 14),
+        new KeyValuePair<string, int>("Hugo Valls Sabater: golem", 14),
         new KeyValuePair<string, int>("", 16),
         new KeyValuePair<string, int>("¡Gracias por jugar!", 16)
     };

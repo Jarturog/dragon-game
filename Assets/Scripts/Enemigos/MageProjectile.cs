@@ -22,6 +22,7 @@ public class MageProjectile : Enemy
         player = GameObject.FindGameObjectWithTag("Player").transform;
         Rigidbody rb = gameObject.AddComponent<Rigidbody>();
         rb.mass /= 10;
+        rb.useGravity = false;
 
         // Set initial rotation to face direction
         transform.rotation = Quaternion.LookRotation(_direction);
@@ -82,11 +83,5 @@ public class MageProjectile : Enemy
             // Hit something else (like a wall) - destroy projectile
             Destroy(gameObject);
         }
-    }
-    
-    // Override unnecessary methods
-    public override void TakeDamage(float damage)
-    {
-        // Projectiles can't take damage
     }
 }

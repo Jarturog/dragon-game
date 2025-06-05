@@ -223,16 +223,16 @@ public class EndGameSequenceManager : MonoBehaviour
         // Create multiple particle systems for different effects
         
         // 1. Large debris chunks
-        CreateDebrisParticles(position, "LargeDebris", 50, 10f, 30f, 16f, 30f);
+        CreateDebrisParticles(position, "LargeDebris", 50, 10f, 30f, 16f, 30f, true);
         
         // 2. Small debris particles
-        CreateDebrisParticles(position, "SmallDebris", 150, 2f, 10f, 10f, 40f);
+        CreateDebrisParticles(position, "SmallDebris", 150, 2f, 10f, 10f, 40f, false);
         
         // 3. Dust cloud
         CreateDustCloud(position);
     }
 
-    private void CreateDebrisParticles(Vector3 position, string name, int count, float minSize, float maxSize, float minSpeed, float maxSpeed)
+    private void CreateDebrisParticles(Vector3 position, string name, int count, float minSize, float maxSize, float minSpeed, float maxSpeed, bool is3d)
     {
         GameObject particleObject = new GameObject($"Moon{name}");
         particleObject.transform.position = position;
@@ -262,9 +262,15 @@ public class EndGameSequenceManager : MonoBehaviour
         particleMaterial.renderQueue = 3000;
         
         renderer.material = particleMaterial;
-        
-        // KEY FIX: Change the rendering mode to make particles rounder
-        renderer.alignment = ParticleSystemRenderSpace.Facing; // Face camera
+        MeshFilter meshFilter = moonObject.GetComponent<MeshFilter>();
+        if (is3d && meshFilter != null && meshFilter.mesh != null) {
+            renderer.renderMode = ParticleSystemRenderMode.Mesh;
+            renderer.mesh = meshFilter.mesh;
+        }
+        else {
+            renderer.alignment = ParticleSystemRenderSpace.Facing; // Face camera
+        }
+
         renderer.sortMode = ParticleSystemSortMode.Distance;
         
         var main = particles.main;
