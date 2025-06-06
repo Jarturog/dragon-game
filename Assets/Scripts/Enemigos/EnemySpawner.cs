@@ -116,8 +116,13 @@ public class EnemySpawner : MonoBehaviour
         StartCoroutine(ActivateRounds());
     }
 
-    private IEnumerator ActivateRounds()
-    {
+    private IEnumerator ActivateRounds() {
+        Material materialSol = Resources.Load<Material>("Materials/MaterialSolEclipse");
+        float intensidad = 4f;
+        byte incrementadorIntensidad = 3;
+        Color color = new Color(191f / 255f, 121f / 255f, 49f / 255f, 1f);
+        materialSol.SetColor("_EmissionColor", color * Mathf.Pow(2.0F, intensidad));
+        
         for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++)
         {
             currentRound = roundIndex;
@@ -163,6 +168,12 @@ public class EnemySpawner : MonoBehaviour
 
             // Wait for all enemies in this round to be defeated
             yield return StartCoroutine(WaitForEnemiesDefeated());
+            
+            materialSol.SetColor("_EmissionColor", color * Mathf.Pow(2.0F, intensidad));
+            intensidad += incrementadorIntensidad;
+            if (incrementadorIntensidad > 1) {
+                incrementadorIntensidad--;
+            }
             
             // No delay after the last round
             if (roundIndex < rounds.Length - 1)
