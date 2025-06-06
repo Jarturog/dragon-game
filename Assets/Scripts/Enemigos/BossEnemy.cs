@@ -121,29 +121,71 @@ public class BossEnemy : Enemy
             {
                 // Assuming you have a SkeletonEnemy class similar to SlimeEnemy
                 // If not, you can use SlimeEnemy.gameObjectToInstantiate as placeholder
-                SpawnMinion(SlimeEnemy.gameObjectToInstantiate); // Replace with skeleton prefab when available
+                SpawnMinion(MageEnemy.gameObjectToInstantiate); // Replace with skeleton prefab when available
                 lastSkeletonSpawnTime = Time.time;
             }
         }
     }
     
-    private void SpawnMinion(GameObject minionPrefab)
+    private void SpawnMinion(GameObject minionPrefab) 
     {
-        if (minionPrefab != null)
-        {
-            // Spawn minion near the boss
-            Vector3 spawnPosition = transform.position + Random.insideUnitSphere * 3f;
-            spawnPosition.y = transform.position.y; // Keep same Y level as boss
-            
-            GameObject minion = Instantiate(minionPrefab, spawnPosition, Quaternion.identity);
-            Enemy minionEnemy = minion.GetComponent<Enemy>();
-            if (minionEnemy != null)
-            {
-                minionEnemy.enabled = true;
-            }
-            
-            Debug.Log($"Boss spawned minion: {minion.name}");
+        if (minionPrefab == null) {
+            return;
         }
+
+        // Generate a random angle, but exclude the front arc (boss's forward direction)
+        float bossForwardAngle = transform.eulerAngles.y;
+        float excludeAngleRange = 60f; // Exclude 60 degrees in front (±30 degrees from forward)
+        
+        // Generate random angle excluding the front arc
+        float randomAngle;
+        do 
+        {
+            randomAngle = Random.Range(0f, 360f);
+        } 
+        while (Mathf.Abs(Mathf.DeltaAngle(randomAngle, bossForwardAngle)) < excludeAngleRange / 2f);
+        
+        // Generate random distance between 2 and 3 meters
+        float spawnDistance = Random.Range(2f, 3f);
+        
+        // Calculate spawn position
+        Vector3 spawnDirection = new Vector3(
+            Mathf.Sin(randomAngle * Mathf.Deg2Rad), 
+            0, 
+            Mathf.Cos(randomAngle * Mathf.Deg2Rad)
+        );
+        Vector3 spawnPosition = transform.position + spawnDirection * spawnDistance;
+        spawnPosition.y = transform.position.y; // Keep same Y level as boss
+        
+        GameObject minion = Instantiate(minionPrefab, spawnPosition, Quaternion.identity);
+        
+        // Configure Rigidbody (similar to EnemySpawner.SpawnEnemy)
+        Rigidbody rb = minion.GetComponent<Rigidbody>();
+        if (rb == null) 
+        {
+            rb = minion.AddComponent<Rigidbody>();
+        }
+        rb.isKinematic = false;
+        rb.freezeRotation = false; // Allow rotation initially
+        rb.useGravity = true;
+        rb.linearDamping = 1f;
+        
+        // Set up the enemy component
+        Enemy minionEnemy = minion.GetComponent<Enemy>();
+        if (minionEnemy != null) 
+        {
+            minionEnemy.enabled = true;
+            
+            // Make sure the enemy faces the spawn point (player direction)
+            GameObject spawnPoint = GameObject.FindWithTag("Player");
+            if (spawnPoint != null) 
+            {
+                Vector3 directionToPlayer = (spawnPoint.transform.position - spawnPosition).normalized;
+                minion.transform.rotation = Quaternion.LookRotation(directionToPlayer);
+            }
+        }
+        
+        Debug.Log($"Boss spawned minion: {minion.name} at distance: {spawnDistance:F1}m");
     }
     
     protected override void MoveTowardsTarget(Vector3 targetPosition)

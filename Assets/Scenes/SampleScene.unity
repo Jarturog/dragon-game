@@ -36444,8 +36444,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 993410713}
-  - component: {fileID: 993410714}
+  - component: {fileID: 993410717}
   - component: {fileID: 993410715}
+  - component: {fileID: 993410716}
   m_Layer: 0
   m_Name: Boss
   m_TagString: Boss1Enemy
@@ -36469,29 +36470,6 @@ Transform:
   - {fileID: 894277627}
   m_Father: {fileID: 1712722368}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &993410714
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 993410712}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 4
-  m_Height: 10.5
-  m_Direction: 1
-  m_Center: {x: 0, y: 5, z: 0}
 --- !u!114 &993410715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36516,6 +36494,48 @@ MonoBehaviour:
   attack1Cooldown: 2
   attack2Cooldown: 3
   attack3Cooldown: 4
+--- !u!65 &993410716
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993410712}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 13, y: 13, z: 7}
+  m_Center: {x: 0, y: 5, z: -1}
+--- !u!65 &993410717
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993410712}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 10, z: 4}
+  m_Center: {x: 0, y: 5, z: -1}
 --- !u!1 &1002229233
 GameObject:
   m_ObjectHideFlags: 0
@@ -36843,8 +36863,8 @@ Transform:
   - {fileID: 2016461096}
   m_Father: {fileID: 1712722368}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &1022342834
-SphereCollider:
+--- !u!136 &1022342834
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -36861,9 +36881,11 @@ SphereCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
+  serializedVersion: 2
   m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Height: 2
+  m_Direction: 2
+  m_Center: {x: 0, y: 0, z: -0.25}
 --- !u!1 &1028145607
 GameObject:
   m_ObjectHideFlags: 0
@@ -51904,6 +51926,7 @@ GameObject:
   - component: {fileID: 1738831496}
   - component: {fileID: 1738831497}
   - component: {fileID: 1738831498}
+  - component: {fileID: 1738831499}
   m_Layer: 0
   m_Name: Mage
   m_TagString: MageEnemy
@@ -51947,9 +51970,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.6
-  m_Height: 4
+  m_Height: 6
   m_Direction: 1
-  m_Center: {x: 0, y: 1.85, z: 0}
+  m_Center: {x: 0, y: 2.8, z: 0}
 --- !u!114 &1738831498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -51972,6 +51995,29 @@ MonoBehaviour:
   projectilePrefab: {fileID: 1022342832}
   projectileSpeed: 10
   projectileLifetime: 5
+--- !u!136 &1738831499
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738831495}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 1.4
+  m_Height: 8
+  m_Direction: 1
+  m_Center: {x: 0, y: 2.8, z: 0}
 --- !u!4 &1778273129 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3522025387875859605, guid: ab76e25ae46cea44baa53ca5b9c20c49, type: 3}
@@ -63064,6 +63110,7 @@ GameObject:
   - component: {fileID: 2004657115}
   - component: {fileID: 2004657117}
   - component: {fileID: 2004657116}
+  - component: {fileID: 2004657118}
   m_Layer: 0
   m_Name: Slime
   m_TagString: SlimeEnemy
@@ -63130,6 +63177,27 @@ CapsuleCollider:
   m_Radius: 0.9
   m_Height: 1
   m_Direction: 1
+  m_Center: {x: 0, y: 0.325, z: 0}
+--- !u!135 &2004657118
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2004657114}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.5
   m_Center: {x: 0, y: 0.325, z: 0}
 --- !u!1 &2008185332 stripped
 GameObject:
