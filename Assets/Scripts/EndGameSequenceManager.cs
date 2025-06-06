@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class EndGameSequenceManager : MonoBehaviour
@@ -121,6 +122,17 @@ public class EndGameSequenceManager : MonoBehaviour
             mainCamera.transform.LookAt(moonObject.transform.position);
 
             yield return null;
+        }
+        
+        // destruir a todos los enemigos restantes
+        List<GameObject> enemigos = new List<GameObject>();
+        enemigos.AddRange(GameObject.FindGameObjectsWithTag("SlimeEnemy"));
+        enemigos.AddRange(GameObject.FindGameObjectsWithTag("MageEnemy"));
+        enemigos.AddRange(GameObject.FindGameObjectsWithTag("Boss1Enemy"));
+        
+        foreach (var enemy in enemigos)
+        {
+            Destroy(enemy);
         }
 
         // Esperar antes de destruir la luna

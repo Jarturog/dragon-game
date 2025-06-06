@@ -44,7 +44,7 @@ public class SlimeEnemy : Enemy
                 
             case EnemyState.Attack:
                 StopMoving();
-                TryAttack();
+                AttackPlayer();
                 break;
                 
             default:

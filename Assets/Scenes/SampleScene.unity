@@ -28346,6 +28346,10 @@ MonoBehaviour:
   bossAnimationCameraDuration: 3
   bossCameraOffset: {x: 0, y: 3, z: -8}
   rounds:
+  - enemyTypes: 00000000
+    enemyCounts: 01000000
+  - enemyTypes: 0000000001000000
+    enemyCounts: 0100000001000000
   - enemyTypes: 02000000
     enemyCounts: 01000000
   spawnInterval: 1
@@ -37055,7 +37059,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 500
   health: 500
-  player: {fileID: 0}
+  player: {fileID: 760057035}
   moveForce: 50
   maxSpeed: 3
   attackCooldown: 2

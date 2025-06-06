@@ -362,16 +362,22 @@ public class EnemySpawner : MonoBehaviour
 
     public void PauseAllEnemies(bool pauseEnemies)
     {
-        if (currentActiveEnemies == null) {
-            return;
-        }
+        //if (currentActiveEnemies == null) {
+        //    return;
+        //}
+
+        List<GameObject> enemigos = new List<GameObject>();
+        enemigos.AddRange(GameObject.FindGameObjectsWithTag("SlimeEnemy"));
+        enemigos.AddRange(GameObject.FindGameObjectsWithTag("MageEnemy"));
+        enemigos.AddRange(GameObject.FindGameObjectsWithTag("Boss1Enemy"));
         
         isPaused = pauseEnemies;
-        foreach (var enemy in currentActiveEnemies)
+        foreach (var enemy in enemigos)//currentActiveEnemies)
         {
             if (enemy != null)
             {
-                enemy.enabled = !pauseEnemies;
+                enemy.GetComponent<Enemy>().enabled = !pauseEnemies;
+                
                 Rigidbody rb = enemy.GetComponent<Rigidbody>();
                 if (rb != null)
                 {

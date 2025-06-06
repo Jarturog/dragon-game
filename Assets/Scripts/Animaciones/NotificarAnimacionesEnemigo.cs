@@ -8,7 +8,7 @@ public class NotificarAnimacionesEnemigo : StateMachineBehaviour
         Enemy enemy = animator.gameObject.GetComponentInParent<Enemy>();
         if (stateInfo.IsName("Armature|Caminar")) {
             enemy.setEstaCaminandoAnimacion(true);
-        } else if (stateInfo.IsName("Armature|Atacar")) {
+        } else if (stateInfo.IsName("Armature|Atacar") || stateInfo.IsName("Armature|Atacar1") ||stateInfo.IsName("Armature|Atacar2") || stateInfo.IsName("Armature|Atacar3")) {
             enemy.setEstaAtacandoAnimacion(true);
         } else if (stateInfo.IsName("Armature|Morir")) {
             Debug.Log("Death animation started");
@@ -30,7 +30,7 @@ public class NotificarAnimacionesEnemigo : StateMachineBehaviour
         Enemy enemy = animator.gameObject.GetComponentInParent<Enemy>();
         if (stateInfo.IsName("Armature|Caminar")) {
             enemy.setEstaCaminandoAnimacion(false);
-        } else if (stateInfo.IsName("Armature|Atacar")) {
+        } else if (stateInfo.IsName("Armature|Atacar") || stateInfo.IsName("Armature|Atacar1") ||stateInfo.IsName("Armature|Atacar2") || stateInfo.IsName("Armature|Atacar3")) {
             enemy.setEstaAtacandoAnimacion(false);
         }
     }

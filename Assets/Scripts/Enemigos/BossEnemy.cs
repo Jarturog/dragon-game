@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class BossEnemy : Enemy
 {
@@ -27,9 +29,10 @@ public class BossEnemy : Enemy
     public float attack1Cooldown = 2f;
     public float attack2Cooldown = 3f;
     public float attack3Cooldown = 4f;
-    private float lastAttack1Time;
-    private float lastAttack2Time;
-    private float lastAttack3Time;
+    private float lastAttack1Time, _attack1AnimationLength;
+    private float lastAttack2Time, _attack2AnimationLength;
+    private float lastAttack3Time, _attack3AnimationLength;
+    private byte lastAttack = 1;
     
     private void Awake()
     {
@@ -63,6 +66,29 @@ public class BossEnemy : Enemy
         lastAttack1Time = -attack1Cooldown;
         lastAttack2Time = -attack2Cooldown;
         lastAttack3Time = -attack3Cooldown;
+        
+        AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
+        _attack1AnimationLength = 1f; // Default fallback
+        _attack2AnimationLength = 1f; // Default fallback
+        _attack3AnimationLength = 1f; // Default fallback
+
+        foreach (AnimationClip clip in clips)
+        {
+            if (clip.name.Contains("Atacar1"))
+            {
+                _attack1AnimationLength = clip.length;
+            } else if (clip.name.Contains("Atacar2"))
+            {
+                _attack2AnimationLength = clip.length;
+            } else if (clip.name.Contains("Atacar3"))
+            {
+                _attack3AnimationLength = clip.length;
+            }
+        }
+
+        if (player == null) {
+            player = GameObject.FindWithTag("Player").transform;
+        }
     }
     
     private void CheckIfSoloBoss()
@@ -236,6 +262,11 @@ public class BossEnemy : Enemy
     
     protected override void AttackPlayer()
     {
+        if (!CanPerformAnyAttack() || _estaAtacandoAnimacion)
+        {
+            return;
+        }
+        
         // Determine which attacks are available based on phase
         switch (currentPhase)
         {
@@ -243,117 +274,91 @@ public class BossEnemy : Enemy
                 // Phase 1: Only Attack 1
                 if (Time.time >= lastAttack1Time + attack1Cooldown)
                 {
-                    PerformAttack1();
+                    PerformAttack(1);
                     lastAttack1Time = Time.time;
                 }
                 break;
                 
             case 2:
                 // Phase 2: Attack 1 and 2, with slight preference for 2
-                if (CanPerformAnyAttack())
-                {
                     // 60% chance for attack 2, 40% chance for attack 1
                     if (Random.value < 0.6f && Time.time >= lastAttack2Time + attack2Cooldown)
                     {
-                        PerformAttack2();
+                        PerformAttack(2);
                         lastAttack2Time = Time.time;
                     }
                     else if (Time.time >= lastAttack1Time + attack1Cooldown)
                     {
-                        PerformAttack1();
+                        PerformAttack(1);
                         lastAttack1Time = Time.time;
                     }
-                }
                 break;
                 
             case 3:
                 // Phase 3: All attacks, with preference for 2 and more so for 3
-                if (CanPerformAnyAttack())
-                {
                     float attackRoll = Random.value;
                     
                     // 50% chance for attack 3, 30% for attack 2, 20% for attack 1
                     if (attackRoll < 0.5f && Time.time >= lastAttack3Time + attack3Cooldown)
                     {
-                        PerformAttack3();
+                        PerformAttack(3);
                         lastAttack3Time = Time.time;
                     }
                     else if (attackRoll < 0.8f && Time.time >= lastAttack2Time + attack2Cooldown)
                     {
-                        PerformAttack2();
+                        PerformAttack(2);
                         lastAttack2Time = Time.time;
                     }
                     else if (Time.time >= lastAttack1Time + attack1Cooldown)
                     {
-                        PerformAttack1();
+                        PerformAttack(1);
                         lastAttack1Time = Time.time;
                     }
-                }
                 break;
         }
     }
     
     private bool CanPerformAnyAttack()
     {
-        return Time.time >= lastAttack1Time + attack1Cooldown ||
-               Time.time >= lastAttack2Time + attack2Cooldown ||
-               Time.time >= lastAttack3Time + attack3Cooldown;
+        return lastAttack == 1 && Time.time >= lastAttack1Time + attack1Cooldown ||
+            lastAttack == 2 && Time.time >= lastAttack2Time + attack2Cooldown ||
+            lastAttack == 3 && Time.time >= lastAttack3Time + attack3Cooldown;
     }
-    
-    private void PerformAttack1()
+
+    private void PerformAttack(byte ataque)
     {
-        Debug.Log(gameObject.name + " performs Attack 1!");
+        Debug.Log(gameObject.name + " performs Attack "+ataque+"!");
         if (_animator != null)
         {
-            _animator.SetTrigger("Atacar1");
+            _animator.SetTrigger("Atacar" + ataque);
+        }
+
+        float attackAnimationLength;
+        if (ataque == 1) {
+            attackAnimationLength = _attack1AnimationLength;
+        } else if (ataque == 2) {
+            attackAnimationLength = _attack2AnimationLength;
+        } else if (ataque == 3) {
+            attackAnimationLength = _attack3AnimationLength;
+        }
+        else {
+            throw new Exception("Ataque " + ataque + " no implementado");
         }
         
-        // Apply damage to player
-        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeDamage(attackDamage);
+        float multiplicador = 1f;
+        if (ataque == 2) {
+            multiplicador = 1.2f;
+        }
+        else if (ataque == 3) {
+            multiplicador = 1.5f;
         }
         
-        AudioManager.Instance.PlaySFX("BossAtaque1");
+        StartCoroutine(CheckAttackAfterAnimation(attackAnimationLength, attackDamage * multiplicador));
+
+        lastAttack = ataque;
+        AudioManager.Instance.PlaySFX("BossAtaque"+ataque);
     }
-    
-    private void PerformAttack2()
-    {
-        Debug.Log(gameObject.name + " performs Attack 2!");
-        if (_animator != null)
-        {
-            _animator.SetTrigger("Atacar2");
-        }
-        
-        // Apply slightly more damage for attack 2
-        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeDamage(attackDamage * 1.2f);
-        }
-        
-        AudioManager.Instance.PlaySFX("BossAtaque2");
-    }
-    
-    private void PerformAttack3()
-    {
-        Debug.Log(gameObject.name + " performs Attack 3!");
-        if (_animator != null)
-        {
-            _animator.SetTrigger("Atacar3");
-        }
-        
-        // Apply more damage for attack 3 (strongest attack)
-        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeDamage(attackDamage * 1.5f);
-        }
-        
-        AudioManager.Instance.PlaySFX("BossAtaque3");
-    }
-    
+
     public override void TakeDamage(float damage)
     {
         base.TakeDamage(damage);

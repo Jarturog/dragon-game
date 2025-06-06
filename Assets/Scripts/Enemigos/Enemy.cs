@@ -1,5 +1,7 @@
 using System.Collections;
+using Unity.Mathematics.Geometry;
 using UnityEngine;
+using Math = System.Math;
 
 public abstract class Enemy : MonoBehaviour
 {
@@ -16,6 +18,7 @@ public abstract class Enemy : MonoBehaviour
     public float maxSpeed = 5f;
     public float attackCooldown = 1f;
     public float attackDamage = 10f;
+    private float _attackAnimationLength;
     protected abstract float AttackDistance { get; }
     protected abstract float FleeDistance { get; }
     
@@ -67,6 +70,18 @@ public abstract class Enemy : MonoBehaviour
         
         _healthBar = gameObject.AddComponent<EnemyHealthBar>();
         _healthBar.Initialize();
+        
+        AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
+        _attackAnimationLength = 1f; // Default fallback
+
+        foreach (AnimationClip clip in clips)
+        {
+            if (clip.name.Contains("Atacar"))
+            {
+                _attackAnimationLength = clip.length;
+                break;
+            }
+        }
     }
 
     void FixedUpdate()
@@ -125,7 +140,7 @@ public abstract class Enemy : MonoBehaviour
                 
             case EnemyState.Attack:
                 StopMoving();
-                TryAttack();
+                AttackPlayer();
                 break;
                 
             case EnemyState.Idle:
@@ -135,15 +150,6 @@ public abstract class Enemy : MonoBehaviour
         
         // Always limit speed after movement
         LimitSpeed();
-    }
-    
-    protected void TryAttack()
-    {
-        if (Time.time >= _lastAttackTime + attackCooldown)
-        {
-            AttackPlayer();
-            _lastAttackTime = Time.time;
-        }
     }
     
     protected virtual void MoveTowardsTarget(Vector3 targetPosition)
@@ -194,15 +200,37 @@ public abstract class Enemy : MonoBehaviour
     
     protected virtual void AttackPlayer()
     {
-        Debug.Log(gameObject.name + " attacks player for " + attackDamage + " damage!");
-        
-        _animator.SetTrigger("Atacar");
-        
-        // Get the PlayerHealth component and apply damage
-        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-        if (playerHealth != null) 
+        if (Time.time < _lastAttackTime + attackCooldown || _estaAtacandoAnimacion)
         {
-            playerHealth.TakeDamage(attackDamage);
+            return;
+        }
+    
+        _lastAttackTime = Time.time;
+        Debug.Log(gameObject.name + " starts attack animation!");
+
+        _animator.SetTrigger("Atacar");
+        StartCoroutine(CheckAttackAfterAnimation(_attackAnimationLength, attackDamage));
+    }
+
+    protected IEnumerator CheckAttackAfterAnimation(float animationDuration, float danyoAtaque)
+    {
+        // Wait for the attack animation to complete
+        yield return new WaitForSeconds(Math.Max(animationDuration - 1f, 0.1f));
+    
+        // Check if player is still in attack range after animation
+        if (player != null && Vector3.Distance(transform.position, player.position) <= AttackDistance)
+        {
+            // Apply damage only if still in range
+            PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth != null) 
+            {
+                playerHealth.TakeDamage(danyoAtaque);
+                Debug.Log(gameObject.name + " successfully hits player for " + danyoAtaque + " damage!");
+            }
+        }
+        else
+        {
+            Debug.Log(gameObject.name + " attack missed - player out of range!");
         }
     }
 
