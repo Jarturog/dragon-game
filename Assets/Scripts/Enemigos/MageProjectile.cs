@@ -90,10 +90,7 @@ public class MageProjectile : Enemy
                 Debug.Log("Projectile hit player for " + attackDamage + " damage!");
             }
         }
-        else if (other.CompareTag("MageEnemy")) {
-            // do nothing
-        }
-        else if (other.tag.EndsWith("Enemy", StringComparison.InvariantCultureIgnoreCase))
+        else if (other.tag.EndsWith("Enemy", StringComparison.InvariantCultureIgnoreCase) && !other.CompareTag("MageEnemy"))
         {
             other.GetComponent<Enemy>().TakeDamage(attackDamage);
             Debug.Log("Projectile hit enemy for " + attackDamage + " damage!");
@@ -101,7 +98,11 @@ public class MageProjectile : Enemy
         {
             Debug.Log("Projectile hit projectile!");
         }
-        Destroy(gameObject);
-        Debug.Log("Projectile hit something!");
+
+        if (!other.CompareTag("MageEnemy")) {
+            Destroy(gameObject);
+            Debug.Log("Projectile hit something!");
+        }
+        
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -255,8 +256,18 @@ public class MainMenuManager : MonoBehaviour
             SetPlayerState(enabled: true);
             SetUIState(showMenu: false, showCursor: false);
         
-            if (enemySpawner != null)
-                enemySpawner.PauseAllEnemies(false);
+            if (enemySpawner != null){
+                if (enemySpawner.IsLastRound()) {
+                    List<GameObject> enemigos = new List<GameObject>();
+                    enemigos.AddRange(GameObject.FindGameObjectsWithTag("SlimeEnemy"));
+                    enemigos.AddRange(GameObject.FindGameObjectsWithTag("MageEnemy"));
+                    enemigos.AddRange(GameObject.FindGameObjectsWithTag("Boss1Enemy"));
+                    enemySpawner.PauseAllEnemies(false, enemigos.ToArray());
+                }
+                else {
+                    enemySpawner.PauseAllEnemies(false);
+                }
+            }
         }
     }
     
@@ -268,9 +279,19 @@ public class MainMenuManager : MonoBehaviour
         SetCameraState(enableMovement: false);
         SetPlayerState(enabled: false);
         SetUIState(showMenu: true, showCursor: true);
-        
-        if (enemySpawner != null)
-            enemySpawner.PauseAllEnemies(true);
+
+        if (enemySpawner != null) {
+            if (enemySpawner.IsLastRound()) {
+                List<GameObject> enemigos = new List<GameObject>();
+                enemigos.AddRange(GameObject.FindGameObjectsWithTag("SlimeEnemy"));
+                enemigos.AddRange(GameObject.FindGameObjectsWithTag("MageEnemy"));
+                enemigos.AddRange(GameObject.FindGameObjectsWithTag("Boss1Enemy"));
+                enemySpawner.PauseAllEnemies(true, enemigos.ToArray());
+            }
+            else {
+                enemySpawner.PauseAllEnemies(true);
+            }
+        }
     }
     
     private void InitializeGameplay()

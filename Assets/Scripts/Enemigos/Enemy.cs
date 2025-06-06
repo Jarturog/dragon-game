@@ -22,7 +22,7 @@ public abstract class Enemy : MonoBehaviour
     protected abstract float AttackDistance { get; }
     protected abstract float FleeDistance { get; }
     
-    private float _lastAttackTime;
+    protected float _lastAttackTime;
     
     // State pattern for cleaner behavior management
     protected enum EnemyState
@@ -63,16 +63,19 @@ public abstract class Enemy : MonoBehaviour
             rb.linearDamping = 1f;
         }
         
-        _animator = GetComponentInChildren<Animator>();
-        
         // Set initial state
         _lastAttackTime = -attackCooldown; // Allow immediate attack if in range
         
         _healthBar = gameObject.AddComponent<EnemyHealthBar>();
         _healthBar.Initialize();
         
-        AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
+        _animator = GetComponentInChildren<Animator>();
         _attackAnimationLength = 1f; // Default fallback
+
+        if (_animator == null) {
+            return;
+        }
+        AnimationClip[] clips = _animator.runtimeAnimatorController.animationClips;
 
         foreach (AnimationClip clip in clips)
         {

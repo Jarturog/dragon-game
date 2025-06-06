@@ -239,8 +239,6 @@ public class PlayerController : MonoBehaviour
         
         if (fireParticleSystem != null)
         {
-            fireParticleSystem.transform.position = transform.position + transform.forward * 0.5f + Vector3.up * 1f;
-            fireParticleSystem.transform.rotation = transform.rotation;
             fireParticleSystem.Play();
             Invoke("StopFireEffect", fireEffectDuration);
         }

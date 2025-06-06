@@ -155,7 +155,7 @@ AnimatorStateMachine:
     m_Position: {x: 330, y: -40, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 2912367705380606752}
-    m_Position: {x: 340, y: 240, z: 0}
+    m_Position: {x: 310, y: 210, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -61905038310807592}
     m_Position: {x: 80, y: 240, z: 0}
@@ -333,8 +333,7 @@ AnimatorState:
   m_Name: Armature|Caminar
   m_Speed: 1
   m_CycleOffset: 0
-  m_Transitions:
-  - {fileID: 4288695512939642405}
+  m_Transitions: []
   m_StateMachineBehaviours:
   - {fileID: -2315467875941758493}
   m_Position: {x: 50, y: 50, z: 0}
@@ -455,28 +454,6 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
---- !u!1101 &4288695512939642405
-AnimatorStateTransition:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_Conditions: []
-  m_DstStateMachine: {fileID: 0}
-  m_DstState: {fileID: 2912367705380606752}
-  m_Solo: 0
-  m_Mute: 0
-  m_IsExit: 0
-  serializedVersion: 3
-  m_TransitionDuration: 0.25
-  m_TransitionOffset: 0
-  m_ExitTime: 0.91176474
-  m_HasExitTime: 1
-  m_HasFixedDuration: 1
-  m_InterruptionSource: 0
-  m_OrderedInterruption: 1
-  m_CanTransitionToSelf: 1
 --- !u!114 &4446781737864248690
 MonoBehaviour:
   m_ObjectHideFlags: 1

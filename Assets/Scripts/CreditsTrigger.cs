@@ -25,14 +25,14 @@ public class CreditsTrigger : MonoBehaviour
     {
         new KeyValuePair<string, int>("MOON'S SHADOW", 36),
         new KeyValuePair<string, int>("The Last Flame", 36),
-        new KeyValuePair<string, int>("", 16),
-        new KeyValuePair<string, int>("Informática gráfica 2024-2025", 14),
-        new KeyValuePair<string, int>("Juan Arturo Abaurrea Calafell: Unity", 14),
-        new KeyValuePair<string, int>("Antoni Navarro Moreno: coliseo", 14),
-        new KeyValuePair<string, int>("Laura Rodríguez López: dragón", 14),
-        new KeyValuePair<string, int>("Lucas Sabater Margarit: slime y esqueleto", 14),
-        new KeyValuePair<string, int>("Hugo Valls Sabater: golem", 14),
-        new KeyValuePair<string, int>("", 16),
+        new KeyValuePair<string, int>("", 6),
+        new KeyValuePair<string, int>("Informática gráfica 2024-2025", 20),
+        new KeyValuePair<string, int>("Juan Arturo Abaurrea Calafell: Unity", 12),
+        new KeyValuePair<string, int>("Antoni Navarro Moreno: coliseo", 12),
+        new KeyValuePair<string, int>("Laura Rodríguez López: dragón", 12),
+        new KeyValuePair<string, int>("Lucas Sabater Margarit: slime y esqueleto", 12),
+        new KeyValuePair<string, int>("Hugo Valls Sabater: golem", 12),
+        new KeyValuePair<string, int>("", 6),
         new KeyValuePair<string, int>("¡Gracias por jugar!", 16)
     };
 
@@ -156,17 +156,23 @@ public class CreditsTrigger : MonoBehaviour
         GameObject go = new GameObject($"CreditLine_{index}");
         go.transform.SetParent(creditsPanel.transform, false);
 
-        // Texto
         TextMeshProUGUI tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text;
-        tmp.fontSize = fontSize; // Usar el tamaño de fuente específico
+        tmp.fontSize = fontSize;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.black;
         tmp.textWrappingMode = TextWrappingModes.Normal;
+    
         RectTransform rt = go.GetComponent<RectTransform>();
+    
+        // Anchor to top-center
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+    
         rt.sizeDelta = new Vector2(1600, 100);
-        rt.anchoredPosition = new Vector2(0, 250 - index * 40);
-
+        rt.anchoredPosition = new Vector2(0, -30 - index * 40); // Start 50px from top, 80px spacing
+    
         // Partículas
         GameObject psObj = new GameObject("Particles");
         psObj.transform.SetParent(go.transform, false);

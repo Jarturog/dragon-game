@@ -20,6 +20,7 @@ public class MageEnemy : Enemy
         }
         
         GetComponent<Enemy>().enabled = false;
+        attackCooldown = 3f;
     }
     
     protected override void MoveTowardsTarget(Vector3 targetPosition)
@@ -40,49 +41,50 @@ public class MageEnemy : Enemy
     // Override the AttackPlayer method to shoot projectiles instead
     protected override void AttackPlayer()
     {
-        Debug.Log(gameObject.name + " shoots a magical projectile!");
+        if (Time.time < _lastAttackTime + attackCooldown || _estaAtacandoAnimacion)
+        {
+            return;
+        }
     
-        if (projectilePrefab != null)
+        _lastAttackTime = Time.time;
+        
+        Debug.Log(gameObject.name + " shoots a magical projectile!");
+
+        _animator.SetTrigger("Atacar");
+        AudioManager.Instance.PlaySFX("LanzarProyectil");
+        
+        // Calculate spawn position at 2/3 of mage's height
+        float mageHeight = GetComponent<Collider>().bounds.size.y;
+        Vector3 spawnPosition = transform.position + Vector3.up * (mageHeight * 2f/3f) + transform.forward * 1.5f;
+    
+        // Create projectile at the calculated position
+        GameObject projectile = Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
+    
+        // Calculate target position at 2/3 of player's height
+        float playerHeight = player.GetComponent<Collider>().bounds.size.y;
+        Vector3 targetPosition = player.position + Vector3.up * (playerHeight * 2f/3f);
+    
+        // Get direction to player's chest/head area
+        Vector3 direction = (targetPosition - projectile.transform.position).normalized;
+    
+        // Add some random deviation to allow projectiles to miss
+        float accuracy = 0.8f; // 80% accuracy
+        if (Random.value > accuracy)
         {
-            _animator.SetTrigger("Atacar");
-            AudioManager.Instance.PlaySFX("LanzarProyectil");
-            
-            // Calculate spawn position at 2/3 of mage's height
-            float mageHeight = GetComponent<Collider>().bounds.size.y;
-            Vector3 spawnPosition = transform.position + Vector3.up * (mageHeight * 2f/3f) + transform.forward * 1.5f;
-        
-            // Create projectile at the calculated position
-            GameObject projectile = Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
-        
-            // Calculate target position at 2/3 of player's height
-            float playerHeight = player.GetComponent<Collider>().bounds.size.y;
-            Vector3 targetPosition = player.position + Vector3.up * (playerHeight * 2f/3f);
-        
-            // Get direction to player's chest/head area
-            Vector3 direction = (targetPosition - projectile.transform.position).normalized;
-        
-            // Add some random deviation to allow projectiles to miss
-            float accuracy = 0.8f; // 80% accuracy
-            if (Random.value > accuracy)
-            {
-                // Add random deviation to direction
-                direction += new Vector3(Random.Range(-0.3f, 0.3f), 0, Random.Range(-0.3f, 0.3f));
-                direction.Normalize();
-            }
-        
-            // Check if the projectile already has MageProjectile component
-            MageProjectile mageProjectile = projectile.GetComponent<MageProjectile>();
-            if (mageProjectile == null)
-            {
-                mageProjectile = projectile.AddComponent<MageProjectile>();
-            }
-        
-            mageProjectile.Initialize(direction, projectileSpeed, projectileLifetime, attackDamage);
+            // Add random deviation to direction
+            direction += new Vector3(Random.Range(-0.3f, 0.3f), 0, Random.Range(-0.3f, 0.3f));
+            direction.Normalize();
         }
-        else
+    
+        // Check if the projectile already has MageProjectile component
+        MageProjectile mageProjectile = projectile.GetComponent<MageProjectile>();
+        if (mageProjectile == null)
         {
-            Debug.LogError("Projectile prefab not assigned on MageEnemy!");
+            mageProjectile = projectile.AddComponent<MageProjectile>();
         }
+    
+        mageProjectile.Initialize(direction, projectileSpeed, projectileLifetime, attackDamage);
+        
     }
 
     public override void TakeDamage(float damage) {

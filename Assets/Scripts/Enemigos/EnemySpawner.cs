@@ -70,6 +70,8 @@ public class EnemySpawner : MonoBehaviour
     byte incrementadorIntensidadSol = 3;
     Color colorSol = new Color(191f / 255f, 121f / 255f, 49f / 255f, 1f);
 
+    private int roundIndex;
+
     private void Start() {
         materialSol = Resources.Load<Material>("Materials/MaterialSolEclipse");
         materialSol.SetColor("_EmissionColor", colorSol * Mathf.Pow(2.0F, intensidadSol));
@@ -128,16 +130,15 @@ public class EnemySpawner : MonoBehaviour
     private IEnumerator ActivateRounds() {
         materialSol.SetColor("_EmissionColor", colorSol * Mathf.Pow(2.0F, intensidadSol));
         
-        for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++)
+        for (roundIndex = 0; roundIndex < rounds.Length; roundIndex++)
         {
             currentRound = roundIndex;
             currentActiveEnemies = new HashSet<Enemy>();
 
             // Check if we need boss animation before the last round
-            bool isLastRound = (roundIndex == rounds.Length - 1);
             bool isLastRoundBossOnly = IsLastRoundBossOnly();
             
-            if (isLastRound && isLastRoundBossOnly)
+            if (isLastRoundBossOnly && IsLastRound())
             {
                 // Execute boss jumping animation
                 yield return StartCoroutine(BossJumpAnimation());
@@ -205,6 +206,13 @@ public class EnemySpawner : MonoBehaviour
         
         return lastRound.enemyTypes[0] == EnemyType.Boss1Enemy && 
                lastRound.enemyCounts[0] == 1;
+    }
+    
+    public bool IsLastRound() {
+        if (rounds == null) {
+            return false;
+        }
+        return (roundIndex == rounds.Length - 1);
     }
     
     private IEnumerator BossJumpAnimation()
@@ -362,22 +370,16 @@ public class EnemySpawner : MonoBehaviour
 
     public void PauseAllEnemies(bool pauseEnemies)
     {
-        //if (currentActiveEnemies == null) {
-        //    return;
-        //}
-
-        List<GameObject> enemigos = new List<GameObject>();
-        enemigos.AddRange(GameObject.FindGameObjectsWithTag("SlimeEnemy"));
-        enemigos.AddRange(GameObject.FindGameObjectsWithTag("MageEnemy"));
-        enemigos.AddRange(GameObject.FindGameObjectsWithTag("Boss1Enemy"));
+        if (currentActiveEnemies == null) {
+            return;
+        }
         
         isPaused = pauseEnemies;
-        foreach (var enemy in enemigos)//currentActiveEnemies)
+        foreach (var enemy in currentActiveEnemies)
         {
             if (enemy != null)
             {
-                enemy.GetComponent<Enemy>().enabled = !pauseEnemies;
-                
+                enemy.enabled = !pauseEnemies;
                 Rigidbody rb = enemy.GetComponent<Rigidbody>();
                 if (rb != null)
                 {
@@ -386,6 +388,30 @@ public class EnemySpawner : MonoBehaviour
                 }
             }
         }
+    }
+    
+    public void PauseAllEnemies(bool pauseEnemies, GameObject[] bossMinions)
+    {
+        if (currentActiveEnemies == null) {
+            return;
+        }
+        
+        isPaused = pauseEnemies;
+        foreach (var enemy in bossMinions)
+        {
+            if (enemy != null)
+            {
+                enemy.GetComponent<Enemy>().enabled = !pauseEnemies;
+                Rigidbody rb = enemy.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+            }
+        }
+
+        PauseAllEnemies(pauseEnemies);
     }
     
     // CirclePointGenerator class remains the same...
