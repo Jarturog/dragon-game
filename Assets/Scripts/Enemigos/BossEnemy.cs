@@ -223,13 +223,15 @@ public class BossEnemy : Enemy
     
     protected override void MoveTowardsTarget(Vector3 targetPosition)
     {
+        base.MoveTowardsTarget(targetPosition);
+        
         // Null check for animator before using it
+        Debug.Log("Jefe mueve hacia target. estacaminando: "+ _estaCaminandoAnimacion);
         if (_animator != null && !_estaCaminandoAnimacion)
         {
+            Debug.Log("Jefe triggerea caminar");
             _animator.SetTrigger("Caminar");
         }
-        
-        base.MoveTowardsTarget(targetPosition);
     }
     
     protected override void AttackPlayer()
