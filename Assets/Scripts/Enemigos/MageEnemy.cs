@@ -45,6 +45,7 @@ public class MageEnemy : Enemy
         if (projectilePrefab != null)
         {
             _animator.SetTrigger("Atacar");
+            AudioManager.Instance.PlaySFX("LanzarProyectil");
             
             // Calculate spawn position at 2/3 of mage's height
             float mageHeight = GetComponent<Collider>().bounds.size.y;
@@ -83,5 +84,10 @@ public class MageEnemy : Enemy
             Debug.LogError("Projectile prefab not assigned on MageEnemy!");
         }
     }
-    
+
+    public override void TakeDamage(float damage) {
+        base.TakeDamage(damage);
+        AudioManager.Instance.PlaySFX("HitMage");
+    }
+
 }

@@ -89,5 +89,10 @@ public class SlimeEnemy : Enemy
             Invoke(nameof(ResetJumpState), 0.2f);
         }
     }
-    
+
+    public override void TakeDamage(float damage) {
+        base.TakeDamage(damage);
+        AudioManager.Instance.PlaySFX("HitSlime");
+    }
+
 }

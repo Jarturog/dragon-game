@@ -63,8 +63,17 @@ public class EnemySpawner : MonoBehaviour
     private ThirdPersonCamera originalCamera;
     private PlayerController playerController;
     private Camera mainCamera;
+    
+    [Header("Sol")]
+    private Material materialSol;
+    float intensidadSol = 4f;
+    byte incrementadorIntensidadSol = 3;
+    Color colorSol = new Color(191f / 255f, 121f / 255f, 49f / 255f, 1f);
 
     private void Start() {
+        materialSol = Resources.Load<Material>("Materials/MaterialSolEclipse");
+        materialSol.SetColor("_EmissionColor", colorSol * Mathf.Pow(2.0F, intensidadSol));
+        
         bossOnStage = GameObject.FindWithTag("PuntoJefe").transform;
             
         generadorPuntos = new CirclePointGenerator(transform.position, radius, minDistance);
@@ -117,11 +126,7 @@ public class EnemySpawner : MonoBehaviour
     }
 
     private IEnumerator ActivateRounds() {
-        Material materialSol = Resources.Load<Material>("Materials/MaterialSolEclipse");
-        float intensidad = 4f;
-        byte incrementadorIntensidad = 3;
-        Color color = new Color(191f / 255f, 121f / 255f, 49f / 255f, 1f);
-        materialSol.SetColor("_EmissionColor", color * Mathf.Pow(2.0F, intensidad));
+        materialSol.SetColor("_EmissionColor", colorSol * Mathf.Pow(2.0F, intensidadSol));
         
         for (int roundIndex = 0; roundIndex < rounds.Length; roundIndex++)
         {
@@ -169,10 +174,10 @@ public class EnemySpawner : MonoBehaviour
             // Wait for all enemies in this round to be defeated
             yield return StartCoroutine(WaitForEnemiesDefeated());
             
-            materialSol.SetColor("_EmissionColor", color * Mathf.Pow(2.0F, intensidad));
-            intensidad += incrementadorIntensidad;
-            if (incrementadorIntensidad > 1) {
-                incrementadorIntensidad--;
+            materialSol.SetColor("_EmissionColor", colorSol * Mathf.Pow(2.0F, intensidadSol));
+            intensidadSol += incrementadorIntensidadSol;
+            if (incrementadorIntensidadSol > 1) {
+                incrementadorIntensidadSol--;
             }
             
             // No delay after the last round
@@ -189,7 +194,7 @@ public class EnemySpawner : MonoBehaviour
         }
     }
     
-    private bool IsLastRoundBossOnly()
+    public bool IsLastRoundBossOnly()
     {
         int lastRoundIndex = rounds.Length - 1;
         if (lastRoundIndex < 0) return false;
@@ -243,6 +248,8 @@ public class EnemySpawner : MonoBehaviour
         float elapsedTime = 0f;
         float maxDuration = Mathf.Max(bossAnimationCameraDuration, bossJumpDuration);
 
+        AudioManager.Instance.PlaySFX("BossFalling");
+        
         while (elapsedTime < maxDuration)
         {
             elapsedTime += Time.deltaTime;

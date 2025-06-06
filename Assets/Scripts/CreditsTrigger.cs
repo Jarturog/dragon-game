@@ -70,6 +70,8 @@ public class CreditsTrigger : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        
+        AudioManager.Instance.PlaySFX("Creditos");
 
         yield return StartCoroutine(FadeToWhite());
         yield return StartCoroutine(ShowCredits());

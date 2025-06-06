@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class EnemyHealthBar : MonoBehaviour
 {
-    private Canvas canvas;
+    public Canvas canvas;
     private Image healthFill;
     private RectTransform fillRect;
     

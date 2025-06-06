@@ -8,6 +8,10 @@ public class BossEnemy : Enemy
     protected override float AttackDistance => 8f;
     protected override float FleeDistance => 0f; // Boss never flees
     
+    [Header("Boss UI")]
+    private bool isSoloBoss = false;
+    private BossHealthUI bossUI;
+    
     [Header("Boss Phase Settings")]
     private int currentPhase = 1;
     private bool hasEnteredPhase2 = false;
@@ -49,6 +53,8 @@ public class BossEnemy : Enemy
     {
         base.Start();
         
+        CheckIfSoloBoss();
+        
         // Initialize spawn timers
         lastSlimeSpawnTime = Time.time;
         lastSkeletonSpawnTime = Time.time;
@@ -57,6 +63,33 @@ public class BossEnemy : Enemy
         lastAttack1Time = -attack1Cooldown;
         lastAttack2Time = -attack2Cooldown;
         lastAttack3Time = -attack3Cooldown;
+    }
+    
+    private void CheckIfSoloBoss()
+    {
+        // Find the EnemySpawner to check if this is the last round with only one boss
+        EnemySpawner spawner = FindFirstObjectByType<EnemySpawner>();
+        if (spawner != null)
+        {
+            // Check if we're in the last round and it's boss-only
+            bool isLastRoundBossOnly = spawner.IsLastRoundBossOnly(); // We'll need to make this method public
+            if (isLastRoundBossOnly)
+            {
+                isSoloBoss = true;
+                // Hide the regular enemy health bar
+                if (_healthBar != null)
+                {
+                    _healthBar.canvas.gameObject.SetActive(false);
+                }
+                
+                // Create boss UI
+                PlayerHealth playerHealth = FindFirstObjectByType<PlayerHealth>();
+                if (playerHealth != null && playerHealth.uiCanvas != null)
+                {
+                    bossUI = new BossHealthUI(playerHealth.uiCanvas, this);
+                }
+            }
+        }
     }
     
     protected override void ExecuteCurrentState()
@@ -280,7 +313,7 @@ public class BossEnemy : Enemy
             playerHealth.TakeDamage(attackDamage);
         }
         
-        AudioManager.Instance.PlaySFX("SlimeImpact");
+        AudioManager.Instance.PlaySFX("BossAtaque1");
     }
     
     private void PerformAttack2()
@@ -298,7 +331,7 @@ public class BossEnemy : Enemy
             playerHealth.TakeDamage(attackDamage * 1.2f);
         }
         
-        AudioManager.Instance.PlaySFX("SlimeImpact");
+        AudioManager.Instance.PlaySFX("BossAtaque2");
     }
     
     private void PerformAttack3()
@@ -316,14 +349,24 @@ public class BossEnemy : Enemy
             playerHealth.TakeDamage(attackDamage * 1.5f);
         }
         
-        AudioManager.Instance.PlaySFX("SlimeImpact");
+        AudioManager.Instance.PlaySFX("BossAtaque3");
     }
     
     public override void TakeDamage(float damage)
     {
         base.TakeDamage(damage);
+        AudioManager.Instance.PlaySFX("HitBoss");
+    
+        // Update boss UI if it exists
+        if (isSoloBoss && bossUI != null)
+        {
+            bossUI.UpdateBossHealthBar(health / maxHealth);
         
-        // Additional boss-specific damage handling could go here
-        // For example, special effects or screen shake
+            // Hide boss UI when dead
+            if (health <= 0)
+            {
+                bossUI.HideBossHealthBar();
+            }
+        }
     }
 }

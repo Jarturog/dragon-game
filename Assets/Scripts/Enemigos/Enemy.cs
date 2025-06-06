@@ -5,7 +5,7 @@ public abstract class Enemy : MonoBehaviour
 {
     public float maxHealth = 100f;
     public float health = 100f;
-    private EnemyHealthBar _healthBar;
+    protected EnemyHealthBar _healthBar;
     
     public Transform player;
     
@@ -143,7 +143,6 @@ public abstract class Enemy : MonoBehaviour
         {
             AttackPlayer();
             _lastAttackTime = Time.time;
-            AudioManager.Instance.PlaySFX("SlimeImpact");
         }
     }
     

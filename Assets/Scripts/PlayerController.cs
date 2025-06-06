@@ -121,22 +121,27 @@ public class PlayerController : MonoBehaviour
         Vector3 move = right * moveX + forward * moveZ;
         bool isMoving = move != Vector3.zero;
 
-        if (isMoving) 
-        {
+        if (isMoving) {
             // Update last movement time
             lastMovementTime = Time.time;
-    
+
             // Apply movement
             controller.Move(move * (currentSpeed * Time.deltaTime));
-    
+
             // Handle movement animations
-            if (isRunning && !_estaCorriendoAnimacion) 
-            {
-                _animator.SetTrigger("Correr");
+            if (isRunning) {
+                AudioManager.Instance.PlaySFX("CaminarNieve", false, 1.5f);
+                if (!_estaCorriendoAnimacion)
+                {
+                    _animator.SetTrigger("Correr");
+                }
             }
-            else if (!isRunning && !_estaCaminandoAnimacion) 
+            else  
             {
-                _animator.SetTrigger("Caminar");
+                AudioManager.Instance.PlaySFX("CaminarNieve", false);
+                if (!_estaCaminandoAnimacion) {
+                    _animator.SetTrigger("Caminar");
+                }
             }
         }
         else if (Time.time - lastMovementTime >= idleDelay && !_estaIdleAnimacion) 
@@ -205,6 +210,8 @@ public class PlayerController : MonoBehaviour
     
     void SpearAttack()
     {
+        AudioManager.Instance.PlaySFX("AtaqueLanza");
+        
         lastAttackTime = Time.time;
         Debug.Log("¡Ataque con lanza!");
         
@@ -225,6 +232,8 @@ public class PlayerController : MonoBehaviour
     
     void FireAttack()
     {
+        AudioManager.Instance.PlaySFX("EscupirFuego");
+        
         lastAttackTime = Time.time;
         Debug.Log("¡Llamarada de fuego!");
         
