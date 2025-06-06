@@ -54,8 +54,8 @@ public class AudioManager : MonoBehaviour
     private void InitializeSliders()
     {
         // Load saved volume values or use default (1.0)
-        float savedMusicVolume = PlayerPrefs.GetFloat(MUSIC_VOLUME_KEY, 1.0f);
-        float savedSFXVolume = PlayerPrefs.GetFloat(SFX_VOLUME_KEY, 1.0f);
+        float savedMusicVolume = PlayerPrefs.GetFloat(MUSIC_VOLUME_KEY, 0.5f);
+        float savedSFXVolume = PlayerPrefs.GetFloat(SFX_VOLUME_KEY, 0.25f);
         
         // Set audio source volumes
         musicSource.volume = savedMusicVolume;
@@ -144,6 +144,7 @@ public class AudioManager : MonoBehaviour
             
             // Start coroutine to clean up after sound finishes
             StartCoroutine(CleanupSound(tempAudio, clipName, clip.length / speed));
+            Debug.Log($"Playing sound {clipName}.");
         }
         else
         {

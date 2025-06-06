@@ -248,8 +248,13 @@ public class EnemySpawner : MonoBehaviour
         float elapsedTime = 0f;
         float maxDuration = Mathf.Max(bossAnimationCameraDuration, bossJumpDuration);
 
-        AudioManager.Instance.PlaySFX("BossFalling");
-        
+        IEnumerator PlayBossFallSoundDelayed()
+        {
+            yield return new WaitForSeconds(2f); // Wait for 1 second
+            AudioManager.Instance.PlaySFX("BossFalling");
+        }
+        StartCoroutine(PlayBossFallSoundDelayed());
+
         while (elapsedTime < maxDuration)
         {
             elapsedTime += Time.deltaTime;

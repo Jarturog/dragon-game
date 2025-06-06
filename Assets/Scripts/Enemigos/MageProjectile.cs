@@ -90,6 +90,9 @@ public class MageProjectile : Enemy
                 Debug.Log("Projectile hit player for " + attackDamage + " damage!");
             }
         }
+        else if (other.CompareTag("MageEnemy")) {
+            // do nothing
+        }
         else if (other.tag.EndsWith("Enemy", StringComparison.InvariantCultureIgnoreCase))
         {
             other.GetComponent<Enemy>().TakeDamage(attackDamage);
