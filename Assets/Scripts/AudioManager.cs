@@ -31,12 +31,8 @@ public class AudioManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             LoadAllSounds();
-            InitializeSliders();
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+        InitializeSliders();
     }
     
     private void LoadAllSounds()
@@ -65,12 +61,14 @@ public class AudioManager : MonoBehaviour
         if (musicSlider != null)
         {
             musicSlider.value = savedMusicVolume;
+            musicSlider.onValueChanged.RemoveAllListeners();
             musicSlider.onValueChanged.AddListener(SetMusicVolume);
         }
         
         if (sfxSlider != null)
         {
             sfxSlider.value = savedSFXVolume;
+            sfxSlider.onValueChanged.RemoveAllListeners();
             sfxSlider.onValueChanged.AddListener(SetSFXVolume);
         }
     }

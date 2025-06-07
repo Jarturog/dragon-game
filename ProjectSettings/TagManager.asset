@@ -15,6 +15,7 @@ TagManager:
   - PuertaFinal
   - PuntoEvitado
   - PuntoJefe
+  - AudioManager
   layers:
   - Default
   - TransparentFX

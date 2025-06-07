@@ -137,8 +137,9 @@ public class EnemySpawner : MonoBehaviour
 
             // Check if we need boss animation before the last round
             bool isLastRoundBossOnly = IsLastRoundBossOnly();
+            bool isLastRound = IsLastRound();
             
-            if (isLastRoundBossOnly && IsLastRound())
+            if (isLastRoundBossOnly && isLastRound)
             {
                 // Execute boss jumping animation
                 yield return StartCoroutine(BossJumpAnimation());
@@ -166,6 +167,17 @@ public class EnemySpawner : MonoBehaviour
                 // Activate the enemy
                 enemy.gameObject.SetActive(true);
                 enemy.enabled = true;
+                if (isLastRoundBossOnly && isLastRound){
+                    Rigidbody rb = enemy.gameObject.AddComponent<Rigidbody>();
+                    rb.isKinematic = false;
+                    rb.mass = 80;
+
+                    enemy.moveForce = 2000;
+
+                    foreach (var c in enemy.gameObject.GetComponents<Collider>()) {
+                        c.enabled = true;
+                    }
+                }
                 enemy.gameObject.GetComponent<Rigidbody>().freezeRotation = false;
                 currentActiveEnemies.Add(enemy);
                 
@@ -313,24 +325,20 @@ public class EnemySpawner : MonoBehaviour
 
         Debug.Log("Animación del jefe completada");
     }
-    
-    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId, int roundIndex) 
-    {
+
+    private Enemy SpawnEnemy(EnemyType enemyType, int enemyId, int roundIndex) {
         Vector3 position;
-    
+
         // Special positioning for boss enemy
-        if (enemyType == EnemyType.Boss1Enemy)
-        {
+        if (enemyType == EnemyType.Boss1Enemy) {
             position = bossOnStage.position;
         }
-        else
-        {
+        else {
             position = generadorPuntos.GenerarPunto();
         }
 
         GameObject gbToInstantiate = null;
-        switch (enemyType)
-        {
+        switch (enemyType) {
             case EnemyType.SlimeEnemy:
                 gbToInstantiate = SlimeEnemy.gameObjectToInstantiate;
                 break;
@@ -341,17 +349,24 @@ public class EnemySpawner : MonoBehaviour
                 gbToInstantiate = BossEnemy.gameObjectToInstantiate;
                 break;
         }
-    
+
         GameObject enemyObject = Instantiate(gbToInstantiate, position, Quaternion.identity);
         enemyObject.name = $"Round{roundIndex}_{enemyType}_{enemyId}";
-    
+
         Vector3 directionToSpawn = (spawnPoint.position - position).normalized;
         enemyObject.transform.rotation = Quaternion.LookRotation(directionToSpawn);
-
-        Rigidbody rb = enemyObject.AddComponent<Rigidbody>();
-        rb.isKinematic = false;
-        rb.freezeRotation = true;
-
+        
+        if (enemyType != EnemyType.Boss1Enemy){
+            Rigidbody rb = enemyObject.AddComponent<Rigidbody>();
+            rb.isKinematic = false;
+            rb.freezeRotation = true;
+        }
+        else {
+            foreach (var c in enemyObject.GetComponents<Collider>()) {
+                c.enabled = false;
+            }
+        }
+        
         Enemy enemyScript = enemyObject.GetComponent<Enemy>();
     
         Debug.Log($"Pre-spawned enemy: {enemyObject.name}");

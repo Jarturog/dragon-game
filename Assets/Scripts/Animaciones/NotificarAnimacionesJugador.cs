@@ -12,7 +12,9 @@ public class NotificarAnimacionesJugador : StateMachineBehaviour
         } else if (stateInfo.IsName("Armature|Idle") || stateInfo.IsName("Bufanda|Idle")) {
             player.setEstaIdleAnimacion(true);
         } else if (stateInfo.IsName("Armature|Saltar") || stateInfo.IsName("Bufanda|Saltar")) {
-            player.setEstaSaltandoAnimacion(false);
+            player.setEstaSaltandoAnimacion(true);
+        } else if (stateInfo.IsName("Armature|Ataque1") || stateInfo.IsName("Bufanda|Ataque1") || stateInfo.IsName("Armature|Ataque2") || stateInfo.IsName("Bufanda|Ataque2")) {
+            player.setEstaAtacandoAnimacion(true);
         }
     }
 
@@ -34,6 +36,8 @@ public class NotificarAnimacionesJugador : StateMachineBehaviour
             player.setEstaIdleAnimacion(false);
         } else if (stateInfo.IsName("Armature|Saltar") || stateInfo.IsName("Bufanda|Saltar")) {
             player.setEstaSaltandoAnimacion(false);
+        } else if (stateInfo.IsName("Armature|Ataque1") || stateInfo.IsName("Bufanda|Ataque1") || stateInfo.IsName("Armature|Ataque2") || stateInfo.IsName("Bufanda|Ataque2")) {
+            player.setEstaAtacandoAnimacion(false);
         }
     }
 

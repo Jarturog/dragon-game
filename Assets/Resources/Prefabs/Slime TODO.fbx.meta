@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d13c1f86cfeea9e4ba79766b48a07ae4
+guid: 9099b13f45d96c345bf74ef2298485dd
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -33,7 +33,7 @@ ModelImporter:
     - serializedVersion: 16
       name: Armature|Atacar
       takeName: Armature|Toda
-      internalID: -899455918591226858
+      internalID: 4912976484563414283
       firstFrame: 0
       lastFrame: 60
       wrapMode: 0
@@ -62,7 +62,7 @@ ModelImporter:
     - serializedVersion: 16
       name: Armature|Saltar
       takeName: Armature|Toda
-      internalID: 2501740818264962827
+      internalID: 5866055896922335392
       firstFrame: 140
       lastFrame: 219
       wrapMode: 0
@@ -89,9 +89,9 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: Armature|Morir
+      name: Armature|Toda
       takeName: Armature|Toda
-      internalID: -2400369759945431216
+      internalID: -899455918591226858
       firstFrame: 90
       lastFrame: 120
       wrapMode: 0

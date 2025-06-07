@@ -32,7 +32,7 @@ public class PlayerController : MonoBehaviour
     private MainMenuManager menuManager;
 
     private Animator _animator;
-    private bool _estaCaminandoAnimacion, _estaCorriendoAnimacion, _estaIdleAnimacion, _estaSaltandoAnimacion;
+    private bool _estaCaminandoAnimacion, _estaCorriendoAnimacion, _estaIdleAnimacion, _estaSaltandoAnimacion, _estaAtacandoAnimacion;
     private float lastMovementTime;
     private float idleDelay = 5f;
     
@@ -182,7 +182,7 @@ public class PlayerController : MonoBehaviour
     void HandleAttacks()
     {
         // Verificar si podemos atacar (cooldown)
-        if (Time.time < lastAttackTime + attackCooldown)
+        if (Time.time < lastAttackTime + attackCooldown || _estaAtacandoAnimacion)
             return;
             
         // Ataque de lanza (clic izquierdo)
@@ -277,5 +277,9 @@ public class PlayerController : MonoBehaviour
     
     public void setEstaSaltandoAnimacion(bool b) {
         _estaSaltandoAnimacion = b;
+    }
+    
+    public void setEstaAtacandoAnimacion(bool b) {
+        _estaAtacandoAnimacion = b;
     }
 }
